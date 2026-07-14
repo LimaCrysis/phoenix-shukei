@@ -63,12 +63,12 @@
 
       var title = document.createElement("div");
       title.className = "worker-title";
-      title.textContent = "作業者" + (index + 1);
+      title.textContent = "運転手";
 
       var name = document.createElement("input");
       name.className = "worker-name";
       name.type = "text";
-      name.placeholder = "名前を入力";
+      name.placeholder = "運転手名を入力";
       name.value = worker.name;
       name.addEventListener("input",function(){
         worker.name = name.value;
@@ -140,14 +140,14 @@
 
       var total = document.createElement("div");
       total.className = "worker-total";
-      total.innerHTML = "<span>作業者合計</span><strong>" + formatYen(workerTotal(worker)) + "</strong>";
+      total.innerHTML = "<span>運転手合計</span><strong>" + formatYen(workerTotal(worker)) + "</strong>";
       card.appendChild(total);
 
       if(index < workers.length - 1){
         var remove = document.createElement("button");
         remove.type = "button";
         remove.className = "remove";
-        remove.textContent = "この作業者を削除";
+        remove.textContent = "この運転手を削除";
         remove.addEventListener("click",function(){
           workers = workers.filter(function(w){ return w.id !== worker.id; });
           render();
