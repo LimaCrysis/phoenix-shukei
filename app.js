@@ -594,6 +594,17 @@
     sheet.innerHTML=content;document.body.appendChild(sheet);return sheet;
   }
 
+  function downloadPdfBlob(blob,fileName){
+    var url=URL.createObjectURL(blob);
+    var link=document.createElement("a");
+    link.href=url;
+    link.download=fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(function(){URL.revokeObjectURL(url);},1500);
+  }
+
   async function createPdf(record){
     if(typeof html2canvas==="undefined"||!window.jspdf){
       alert("PDF機能の読み込みに失敗しました。通信状態を確認して再読み込みしてください。");
@@ -624,10 +635,28 @@
         pdf.addImage(data,"JPEG",margin,margin,usableWidth,partHeight);
         y+=sliceHeight;page++;
       }
-      pdf.save("詳細PDF_"+record.date+".pdf");
+      var fileName="詳細PDF_"+record.date+".pdf";
+      var pdfBlob=pdf.output("blob");
+      var pdfFile=new File([pdfBlob],fileName,{type:"application/pdf"});
+
+      // URLや本文を渡さず、PDFファイルだけを共有します。
+      if(navigator.share &&
+         navigator.canShare &&
+         navigator.canShare({files:[pdfFile]})){
+        try{
+          await navigator.share({files:[pdfFile]});
+        }catch(shareError){
+          // 共有画面を利用者が閉じた場合は何もしません。
+          if(shareError && shareError.name==="AbortError")return;
+          console.warn("PDF共有に失敗したためダウンロードします。",shareError);
+          downloadPdfBlob(pdfBlob,fileName);
+        }
+      }else{
+        downloadPdfBlob(pdfBlob,fileName);
+      }
     }catch(e){
       console.error(e);
-      alert("PDFの作成に失敗しました。もう一度お試しください。");
+      alert("詳細PDFの作成または共有に失敗しました。もう一度お試しください。");
     }finally{
       if(sheet)sheet.remove();
       overlay.remove();
