@@ -1,6 +1,18 @@
 (function(){
   "use strict";
 
+  // 古いPWAキャッシュが残っている場合は自動的に削除します。
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(registrations){
+      registrations.forEach(function(registration){ registration.unregister(); });
+    }).catch(function(){});
+  }
+  if("caches" in window){
+    caches.keys().then(function(keys){
+      keys.forEach(function(key){ caches.delete(key); });
+    }).catch(function(){});
+  }
+
   var STORAGE = {
     draft:"shukei_draft_v210",
     history:"shukei_history_v210",
@@ -372,23 +384,40 @@
     }
 
     var key=newPlaceKey();
-    PRICES.push({key:key,label:label,price:price});
+    var newPlace={key:key,label:label,price:price};
 
+    // 設定データへ追加
+    PRICES.push(newPlace);
+
+    // 現在表示中のすべての運転手へ新しい場所の回数欄を追加
     workers.forEach(function(worker){
       if(!worker.counts) worker.counts={};
       worker.counts[key]=0;
     });
 
-    saveJSON(STORAGE.prices,PRICES);
-    autoSave();
+    // 先に保存してからメイン画面を再描画
+    saveJSON(STORAGE.prices,clone(PRICES));
+    updatedAt=new Date().toISOString();
+    saveJSON(STORAGE.draft,{
+      date:currentDate,
+      workers:clone(workers),
+      updatedAt:updatedAt
+    });
+
+    // 設定画面を更新
     renderSettingsFields();
+
+    // 入力欄をクリア
+    document.getElementById("newLocationName").value="";
+    document.getElementById("newLocationPrice").value="";
+
+    // メイン画面を即時更新
     render();
+    renderStatus("自動保存");
 
-    nameInput.value="";
-    priceInput.value="";
-    nameInput.focus();
-
-    alert(label+"を追加しました。");
+    // 設定画面は開いたまま、追加完了を表示
+    alert(label+"（"+formatYen(price)+"）を追加しました。");
+    document.getElementById("newLocationName").focus();
   }
 
   function saveSettings(){
