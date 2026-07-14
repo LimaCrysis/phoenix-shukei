@@ -606,19 +606,6 @@
   }
 
   async function createPdf(record){
-    var previewWindow=window.open("","_blank");
-    if(previewWindow){
-      previewWindow.document.write(
-        '<!doctype html><html lang="ja"><head><meta charset="utf-8">'+
-        '<meta name="viewport" content="width=device-width,initial-scale=1">'+
-        '<title>詳細PDFを作成中</title>'+
-        '<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;'+
-        'display:flex;align-items:center;justify-content:center;min-height:100vh;'+
-        'margin:0;background:#f3f6fb;color:#172033}div{text-align:center;font-weight:800}</style>'+
-        '</head><body><div>詳細PDFを作成しています…</div></body></html>'
-      );
-      previewWindow.document.close();
-    }
     if(typeof html2canvas==="undefined"||!window.jspdf){
       alert("PDF機能の読み込みに失敗しました。通信状態を確認して再読み込みしてください。");
       return;
@@ -650,20 +637,13 @@
       }
       var fileName="詳細PDF_"+record.date+".pdf";
       var pdfBlob=pdf.output("blob");
-      var pdfUrl=URL.createObjectURL(pdfBlob);
-
-      if(previewWindow && !previewWindow.closed){
-        previewWindow.location.replace(pdfUrl);
-        window.setTimeout(function(){
-          URL.revokeObjectURL(pdfUrl);
-        },10*60*1000);
-      }else{
-        downloadPdfBlob(pdfBlob,fileName);
-        alert("PDF画面を開けなかったため、PDFファイルとして保存しました。");
-      }
+      downloadPdfBlob(pdfBlob,fileName);
+      var savedName=document.getElementById("pdfSavedFileName");
+      if(savedName)savedName.textContent=fileName;
+      var savedDialog=document.getElementById("pdfSavedDialog");
+      if(savedDialog && !savedDialog.open)savedDialog.showModal();
     }catch(e){
       console.error(e);
-      if(previewWindow && !previewWindow.closed)previewWindow.close();
       alert("詳細PDFの作成に失敗しました。もう一度お試しください。");
     }finally{
       if(sheet)sheet.remove();
@@ -906,6 +886,9 @@
   document.getElementById("nextWorkerBtn").addEventListener("click",function(){changeWorker(1);});
   document.getElementById("resetBtn").addEventListener("click",resetAll);
   document.getElementById("pdfBtn").addEventListener("click",printCurrent);
+  document.getElementById("closePdfSavedDialog").addEventListener("click",function(){
+    document.getElementById("pdfSavedDialog").close();
+  });
   document.getElementById("settingsBtn").addEventListener("click",openSettings);
   document.getElementById("addLocationBtn").addEventListener("click",addLocation);
   document.getElementById("historySearch").addEventListener("input",renderHistory);

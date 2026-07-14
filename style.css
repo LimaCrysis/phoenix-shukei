@@ -775,3 +775,9 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
     grid-template-columns:1fr;
   }
 }
+
+.pdf-saved-modal{width:min(88vw,460px);padding:20px}
+.pdf-saved-modal h2{margin:0 0 10px;font-size:21px}
+.pdf-saved-modal>p{margin:8px 0}
+.pdf-saved-modal ol{margin:14px 0;padding-left:24px;line-height:1.8}
+#pdfSavedFileName{font-weight:900;word-break:break-all}
