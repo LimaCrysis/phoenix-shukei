@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <title>集計アプリ</title>
-<link rel="stylesheet" href="style.css?v=2.3.1">
+<link rel="stylesheet" href="style.css?v=3.0.0">
 </head>
 <body>
 <div class="app">
   <header>
     <h1>集計アプリ</h1>
-    <div class="version">Ver.2.3.1</div>
+    <div class="version">Ver.3.0.0</div>
     <div id="saveStatus" class="save-status">未保存</div>
   </header>
 
@@ -35,6 +35,7 @@
     <button id="saveBtn" class="action primary" type="button">保存</button>
     <button id="pdfBtn" class="action" type="button">PDF保存</button>
     <button id="settingsBtn" class="action" type="button">場所単価</button>
+    <button id="managementBtn" class="action" type="button">管理</button>
     <button id="resetBtn" class="action danger" type="button">全員リセット</button>
   </section>
 
@@ -47,7 +48,7 @@
     <div id="historyList"></div>
   </section>
 
-  <div class="notice">運転手別の回数と金額を集計できます</div>
+  <div class="notice">運転手別の本数と金額を集計できます</div>
 </div>
 
 <dialog id="settingsDialog">
@@ -76,8 +77,67 @@
   </form>
 </dialog>
 
+<dialog id="managementDialog">
+  <section class="management-modal">
+    <div class="management-title">
+      <h2>管理</h2>
+      <button class="dialog-close" type="button" data-close-dialog="managementDialog">閉じる</button>
+    </div>
+
+    <div class="month-select">
+      <label for="managementMonth">集計月</label>
+      <input id="managementMonth" type="month">
+    </div>
+
+    <div id="managementEmpty" class="management-empty">保存履歴がありません</div>
+
+    <div id="managementContent">
+      <section class="management-summary">
+        <div>
+          <span>月間合計</span>
+          <strong id="monthlyAmount">0円</strong>
+        </div>
+        <div>
+          <span>総本数</span>
+          <strong id="monthlyCount">0本</strong>
+        </div>
+        <div>
+          <span>保存日数</span>
+          <strong id="monthlyDays">0日</strong>
+        </div>
+      </section>
+
+      <section class="management-block">
+        <h3>運転手別集計</h3>
+        <div class="management-table-wrap">
+          <table class="management-table">
+            <thead>
+              <tr><th>運転手</th><th>本数</th><th>金額</th></tr>
+            </thead>
+            <tbody id="driverMonthlyRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="management-block">
+        <h3>場所別集計</h3>
+        <div class="management-table-wrap">
+          <table class="management-table">
+            <thead>
+              <tr><th>場所</th><th>本数</th><th>金額</th></tr>
+            </thead>
+            <tbody id="placeMonthlyRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <p class="management-note">管理画面の月間集計は詳細PDFには反映されません。順位やランキングも表示しません。</p>
+    </div>
+  </section>
+</dialog>
+
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
-<script src="app.js?v=2.3.1"></script>
+<script src="app.js?v=3.0.0"></script>
 </body>
 </html>

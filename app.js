@@ -178,7 +178,7 @@
         taskName.textContent=item.label;
         var unit=document.createElement("span");
         unit.className="unit";
-        unit.textContent=formatYen(item.price)+" / 回";
+        unit.textContent=formatYen(item.price)+" / 本";
         left.appendChild(taskName);
         left.appendChild(unit);
 
@@ -249,7 +249,7 @@
 
   function saveHistory(){
     var valid=validWorkers();
-    if(valid.length===0){alert("名前が入力され、回数が1回以上ある運転手がいません。");return;}
+    if(valid.length===0){alert("名前が入力され、本数が1本以上ある運転手がいません。");return;}
     var history=loadJSON(STORAGE.history,[]);
     var record={
       id:uid(),date:currentDate,workers:clone(valid),prices:clone(PRICES),
@@ -484,7 +484,7 @@
         rows+='<tr><td>'+escapeHTML(item.label)+'</td><td>'+count+'回</td><td>'+formatYen(item.price)+'</td><td>'+formatYen(count*item.price)+'</td></tr>';
       });
       content+='<section class="pdf-person"><h2>'+escapeHTML(worker.name)+'</h2>'+
-        '<table class="pdf-table"><thead><tr><th>項目</th><th>回数</th><th>単価</th><th>小計</th></tr></thead><tbody>'+
+        '<table class="pdf-table"><thead><tr><th>項目</th><th>本数</th><th>単価</th><th>小計</th></tr></thead><tbody>'+
         rows+'</tbody></table><div class="pdf-person-total">合計 '+formatYen(workerTotal(worker,priceSet))+'</div></section>';
     });
     content+='<div class="pdf-grand">総合計 '+formatYen(record.total)+'</div>';
@@ -540,6 +540,110 @@
     });
   }
 
+
+  function currentMonthValue(){
+    var d=new Date();
+    var local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+    return local.toISOString().slice(0,7);
+  }
+
+  function openManagement(){
+    var monthInput=document.getElementById("managementMonth");
+    if(!monthInput.value)monthInput.value=currentMonthValue();
+    renderManagement();
+    var dialog=document.getElementById("managementDialog");
+    if(!dialog.open)dialog.showModal();
+  }
+
+  function renderManagement(){
+    var month=document.getElementById("managementMonth").value || currentMonthValue();
+    var history=loadJSON(STORAGE.history,[]);
+    var records=history.filter(function(record){
+      return typeof record.date==="string" && record.date.slice(0,7)===month;
+    });
+
+    var empty=document.getElementById("managementEmpty");
+    var content=document.getElementById("managementContent");
+
+    if(records.length===0){
+      empty.style.display="block";
+      content.style.display="none";
+      return;
+    }
+
+    empty.style.display="none";
+    content.style.display="block";
+
+    var driverMap={};
+    var driverOrder=[];
+    var placeMap={};
+    var placeOrder=[];
+    var totalAmount=0;
+    var totalCount=0;
+    var dateSet={};
+
+    records.forEach(function(record){
+      dateSet[record.date]=true;
+      var priceSet=record.prices || PRICES;
+      totalAmount+=Number(record.total || 0);
+
+      record.workers.forEach(function(worker){
+        var driverName=(worker.name || "").trim();
+        if(driverName && !driverMap[driverName]){
+          driverMap[driverName]={count:0,amount:0};
+          driverOrder.push(driverName);
+        }
+
+        Object.keys(worker.counts || {}).forEach(function(key){
+          var count=Number(worker.counts[key] || 0);
+          if(count<=0)return;
+
+          var place=priceSet.find(function(item){return item.key===key;});
+          if(!place)return;
+
+          var amount=count*Number(place.price || 0);
+          totalCount+=count;
+
+          if(driverName){
+            driverMap[driverName].count+=count;
+            driverMap[driverName].amount+=amount;
+          }
+
+          if(!placeMap[place.label]){
+            placeMap[place.label]={count:0,amount:0};
+            placeOrder.push(place.label);
+          }
+          placeMap[place.label].count+=count;
+          placeMap[place.label].amount+=amount;
+        });
+      });
+    });
+
+    document.getElementById("monthlyAmount").textContent=formatYen(totalAmount);
+    document.getElementById("monthlyCount").textContent=totalCount.toLocaleString("ja-JP")+"本";
+    document.getElementById("monthlyDays").textContent=Object.keys(dateSet).length+"日";
+
+    var driverRows=document.getElementById("driverMonthlyRows");
+    driverRows.innerHTML="";
+    driverOrder.forEach(function(name){
+      var row=document.createElement("tr");
+      row.innerHTML="<td>"+escapeHTML(name)+"</td>"+
+        "<td>"+driverMap[name].count.toLocaleString("ja-JP")+"本</td>"+
+        "<td>"+formatYen(driverMap[name].amount)+"</td>";
+      driverRows.appendChild(row);
+    });
+
+    var placeRows=document.getElementById("placeMonthlyRows");
+    placeRows.innerHTML="";
+    placeOrder.forEach(function(label){
+      var row=document.createElement("tr");
+      row.innerHTML="<td>"+escapeHTML(label)+"</td>"+
+        "<td>"+placeMap[label].count.toLocaleString("ja-JP")+"本</td>"+
+        "<td>"+formatYen(placeMap[label].amount)+"</td>";
+      placeRows.appendChild(row);
+    });
+  }
+
   function escapeHTML(value){
     return String(value).replace(/[&<>"']/g,function(c){
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];
@@ -551,7 +655,7 @@
   workDateEl.addEventListener("change",function(){
     var next=workDateEl.value;
     if(next===currentDate)return;
-    if(validWorkers().length>0&&!confirm("日付を変更すると名前と回数をリセットします。よろしいですか？")){
+    if(validWorkers().length>0&&!confirm("日付を変更すると名前と本数をリセットします。よろしいですか？")){
       workDateEl.value=currentDate;return;
     }
     currentDate=next;workers=[newWorker()];autoSave();render();
@@ -564,6 +668,14 @@
   document.getElementById("settingsBtn").addEventListener("click",openSettings);
   document.getElementById("addLocationBtn").addEventListener("click",addLocation);
   document.getElementById("historySearch").addEventListener("input",renderHistory);
+  document.getElementById("managementBtn").addEventListener("click",openManagement);
+  document.getElementById("managementMonth").addEventListener("change",renderManagement);
+  document.querySelectorAll("[data-close-dialog]").forEach(function(button){
+    button.addEventListener("click",function(){
+      var dialog=document.getElementById(button.getAttribute("data-close-dialog"));
+      if(dialog)dialog.close();
+    });
+  });
 
   render();
   if(updatedAt)renderStatus("自動保存");
