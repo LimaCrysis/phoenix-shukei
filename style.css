@@ -620,3 +620,72 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
   color:var(--muted);
   font-size:12px;
 }
+
+
+/* Ver.4.0 運転手切り替え */
+.driver-switcher{
+  display:grid;
+  grid-template-columns:62px minmax(0,1fr) 62px;
+  gap:10px;
+  align-items:center;
+  margin:0 0 14px;
+}
+.switch-btn{
+  width:62px;
+  height:58px;
+  border:0;
+  border-radius:14px;
+  background:#1769e0;
+  color:#fff;
+  font-size:25px;
+  font-weight:900;
+  box-shadow:var(--shadow);
+}
+.switch-btn:disabled{
+  background:#aab4c2;
+  opacity:.55;
+}
+.switch-center{
+  min-height:58px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:7px 10px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--card);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.switch-center strong{
+  width:100%;
+  text-align:center;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:19px;
+}
+.switch-center span{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+}
+.worker{
+  animation:driverCardIn .16s ease-out;
+}
+@keyframes driverCardIn{
+  from{opacity:.55;transform:translateX(5px)}
+  to{opacity:1;transform:translateX(0)}
+}
+@media(max-width:390px){
+  .driver-switcher{
+    grid-template-columns:54px minmax(0,1fr) 54px;
+    gap:7px;
+  }
+  .switch-btn{
+    width:54px;
+    height:54px;
+  }
+}

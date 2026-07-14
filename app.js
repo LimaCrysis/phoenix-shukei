@@ -35,6 +35,7 @@
   var workers = draft && draft.workers ? draft.workers : [newWorker()];
   var currentDate = draft && draft.date ? draft.date : todayValue();
   var updatedAt = draft && draft.updatedAt ? draft.updatedAt : null;
+  var activeWorkerIndex = 0;
 
   function clone(value){ return JSON.parse(JSON.stringify(value)); }
 
@@ -105,19 +106,11 @@
     });
   }
 
-  function ensureLastBlank(){
+  function ensureWorkers(){
     normalizeWorkers();
-    if(workers.length===0){workers.push(newWorker());return;}
-    while(workers.length>1){
-      var last=workers[workers.length-1];
-      var prev=workers[workers.length-2];
-      var lastBlank=last.name.trim()===""&&Object.keys(last.counts).every(function(k){return Number(last.counts[k])===0;});
-      var prevBlank=prev.name.trim()===""&&Object.keys(prev.counts).every(function(k){return Number(prev.counts[k])===0;});
-      if(lastBlank&&prevBlank){workers.pop();}else{break;}
-    }
-    var finalWorker=workers[workers.length-1];
-    var hasData=finalWorker.name.trim()!==""||Object.keys(finalWorker.counts).some(function(k){return Number(finalWorker.counts[k])>0;});
-    if(hasData){workers.push(newWorker());}
+    if(workers.length===0)workers.push(newWorker());
+    if(activeWorkerIndex<0)activeWorkerIndex=0;
+    if(activeWorkerIndex>=workers.length)activeWorkerIndex=workers.length-1;
   }
 
   function autoSave(){
@@ -138,114 +131,145 @@
       d.toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
   }
 
+  function renderSwitcher(){
+    ensureWorkers();
+    var worker=workers[activeWorkerIndex];
+    var label=(worker.name || "").trim() || "新しい運転手";
+    document.getElementById("activeWorkerLabel").textContent=label;
+    document.getElementById("activeWorkerPosition").textContent=
+      (activeWorkerIndex+1)+" / "+workers.length;
+    document.getElementById("prevWorkerBtn").disabled=activeWorkerIndex===0;
+    document.getElementById("nextWorkerBtn").disabled=activeWorkerIndex===workers.length-1;
+  }
+
   function render(){
-    ensureLastBlank();
+    ensureWorkers();
     workersEl.innerHTML="";
 
-    workers.forEach(function(worker,index){
-      var card=document.createElement("section");
-      card.className="worker";
+    var worker=workers[activeWorkerIndex];
+    var card=document.createElement("section");
+    card.className="worker";
 
-      var title=document.createElement("div");
-      title.className="worker-title";
-      title.textContent="運転手";
+    var title=document.createElement("div");
+    title.className="worker-title";
+    title.textContent="運転手";
 
-      var name=document.createElement("input");
-      name.className="worker-name";
-      name.type="text";
-      name.placeholder="運転手名を入力";
-      name.value=worker.name;
+    var name=document.createElement("input");
+    name.className="worker-name";
+    name.type="text";
+    name.placeholder="運転手名を入力";
+    name.value=worker.name;
 
-      name.addEventListener("input",function(){
-        worker.name=name.value;
-        autoSave();
-        if(index===workers.length-1&&worker.name.trim()!==""){
-          ensureLastBlank();render();
-          var fields=document.querySelectorAll(".worker-name");
-          if(fields[index]){
-            fields[index].focus();
-            fields[index].setSelectionRange(worker.name.length,worker.name.length);
-          }
-        }
-      });
-
-      card.appendChild(title);
-      card.appendChild(name);
-
-      PRICES.forEach(function(item){
-        var row=document.createElement("div");
-        row.className="task";
-
-        var left=document.createElement("div");
-        var taskName=document.createElement("div");
-        taskName.className="task-name";
-        taskName.textContent=item.label;
-        var unit=document.createElement("span");
-        unit.className="unit";
-        unit.textContent=formatYen(item.price)+" / 本";
-        left.appendChild(taskName);
-        left.appendChild(unit);
-
-        var counter=document.createElement("div");
-        counter.className="counter";
-
-        var minus=document.createElement("button");
-        minus.type="button";minus.className="minus";minus.textContent="−";
-        var count=document.createElement("span");
-        count.className="count";count.textContent=String(worker.counts[item.key]||0);
-        var plus=document.createElement("button");
-        plus.type="button";plus.className="plus";plus.textContent="＋";
-
-        minus.addEventListener("click",function(){
-          worker.counts[item.key]=Math.max(0,Number(worker.counts[item.key]||0)-1);
-          autoSave();render();
-        });
-        plus.addEventListener("click",function(){
-          worker.counts[item.key]=Number(worker.counts[item.key]||0)+1;
-          autoSave();render();
-        });
-
-        counter.appendChild(minus);counter.appendChild(count);counter.appendChild(plus);
-        row.appendChild(left);row.appendChild(counter);card.appendChild(row);
-      });
-
-      var total=document.createElement("div");
-      total.className="worker-total";
-      total.innerHTML="<span>運転手合計</span><strong>"+formatYen(workerTotal(worker))+"</strong>";
-      card.appendChild(total);
-
-      var isLastBlank=index===workers.length-1&&worker.name.trim()===""&&
-        Object.keys(worker.counts).every(function(k){return Number(worker.counts[k])===0;});
-      if(!isLastBlank){
-        var remove=document.createElement("button");
-        remove.type="button";remove.className="remove";remove.textContent="この運転手を削除";
-        remove.addEventListener("click",function(){
-          if(confirm((worker.name||"この運転手")+"を削除しますか？")){
-            workers=workers.filter(function(w){return w.id!==worker.id;});
-            autoSave();render();
-          }
-        });
-        card.appendChild(remove);
-      }
-      workersEl.appendChild(card);
+    name.addEventListener("input",function(){
+      worker.name=name.value;
+      document.getElementById("activeWorkerLabel").textContent=
+        worker.name.trim() || "新しい運転手";
+      autoSave();
     });
+
+    card.appendChild(title);
+    card.appendChild(name);
+
+    PRICES.forEach(function(item){
+      var row=document.createElement("div");
+      row.className="task";
+
+      var left=document.createElement("div");
+      var taskName=document.createElement("div");
+      taskName.className="task-name";
+      taskName.textContent=item.label;
+      var unit=document.createElement("span");
+      unit.className="unit";
+      unit.textContent=formatYen(item.price)+" / 本";
+      left.appendChild(taskName);
+      left.appendChild(unit);
+
+      var counter=document.createElement("div");
+      counter.className="counter";
+
+      var minus=document.createElement("button");
+      minus.type="button";
+      minus.className="minus";
+      minus.textContent="−";
+
+      var count=document.createElement("span");
+      count.className="count";
+      count.textContent=String(worker.counts[item.key] || 0);
+
+      var plus=document.createElement("button");
+      plus.type="button";
+      plus.className="plus";
+      plus.textContent="＋";
+
+      minus.addEventListener("click",function(){
+        worker.counts[item.key]=Math.max(0,Number(worker.counts[item.key] || 0)-1);
+        autoSave();
+        render();
+      });
+
+      plus.addEventListener("click",function(){
+        worker.counts[item.key]=Number(worker.counts[item.key] || 0)+1;
+        autoSave();
+        render();
+      });
+
+      counter.appendChild(minus);
+      counter.appendChild(count);
+      counter.appendChild(plus);
+      row.appendChild(left);
+      row.appendChild(counter);
+      card.appendChild(row);
+    });
+
+    var total=document.createElement("div");
+    total.className="worker-total";
+    total.innerHTML="<span>運転手合計</span><strong>"+
+      formatYen(workerTotal(worker))+"</strong>";
+    card.appendChild(total);
+
+    if(workers.length>1){
+      var remove=document.createElement("button");
+      remove.type="button";
+      remove.className="remove";
+      remove.textContent="この運転手を削除";
+      remove.addEventListener("click",function(){
+        if(!confirm((worker.name || "この運転手")+"を削除しますか？"))return;
+        workers.splice(activeWorkerIndex,1);
+        if(activeWorkerIndex>=workers.length)activeWorkerIndex=workers.length-1;
+        autoSave();
+        render();
+      });
+      card.appendChild(remove);
+    }
+
+    workersEl.appendChild(card);
     workDateEl.value=currentDate;
+    renderSwitcher();
     renderHistory();
   }
 
-  function addWorker(){
-    ensureLastBlank();
-    var last=workers[workers.length-1];
-    var blank=last.name.trim()===""&&Object.keys(last.counts).every(function(k){return Number(last.counts[k])===0;});
-    if(!blank)workers.push(newWorker());
+  function changeWorker(direction){
+    var next=activeWorkerIndex+direction;
+    if(next<0 || next>=workers.length)return;
+    activeWorkerIndex=next;
     render();
-    var fields=document.querySelectorAll(".worker-name");
-    if(fields.length)fields[fields.length-1].focus();
+  }
+
+  function addWorker(){
+    workers.push(newWorker());
+    activeWorkerIndex=workers.length-1;
+    autoSave();
+    render();
+    var field=document.querySelector(".worker-name");
+    if(field)field.focus();
   }
 
   function resetAll(){
     if(confirm("全員の入力内容をリセットしますか？")){
-      workers=[newWorker()];autoSave();render();
+      workers=[newWorker()];
+      activeWorkerIndex=0;
+      autoSave();
+      render();
     }
   }
 
@@ -329,7 +353,8 @@
     if(confirm("この自動保存履歴を入力画面へ読み込みますか？")){
       currentDate=record.date;
       PRICES=clone(record.prices||PRICES);
-      workers=clone(record.workers);workers.push(newWorker());
+      workers=clone(record.workers);
+      activeWorkerIndex=0;
       saveJSON(STORAGE.prices,PRICES);autoSave();render();window.scrollTo({top:0,behavior:"smooth"});
     }
   }
@@ -699,9 +724,11 @@
     if(validWorkers().length>0&&!confirm("日付を変更すると名前と本数をリセットします。よろしいですか？")){
       workDateEl.value=currentDate;return;
     }
-    currentDate=next;workers=[newWorker()];autoSave();render();
+    currentDate=next;workers=[newWorker()];activeWorkerIndex=0;autoSave();render();
   });
 
+  document.getElementById("prevWorkerBtn").addEventListener("click",function(){changeWorker(-1);});
+  document.getElementById("nextWorkerBtn").addEventListener("click",function(){changeWorker(1);});
   document.getElementById("addWorkerBtn").addEventListener("click",addWorker);
   document.getElementById("resetBtn").addEventListener("click",resetAll);
   document.getElementById("pdfBtn").addEventListener("click",printCurrent);

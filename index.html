@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <title>集計アプリ</title>
-<link rel="stylesheet" href="style.css?v=3.1.1">
+<link rel="stylesheet" href="style.css?v=4.0.0">
 </head>
 <body>
 <div class="app">
   <header>
     <h1>集計アプリ</h1>
-    <div class="version">Ver.3.1.1</div>
+    <div class="version">Ver.4.0.0</div>
     <div id="saveStatus" class="save-status">未保存</div>
   </header>
 
@@ -20,6 +20,15 @@
       <label for="workDate">日付</label>
       <input id="workDate" type="date">
     </div>
+  </section>
+
+  <section class="driver-switcher" aria-label="運転手切り替え">
+    <button id="prevWorkerBtn" class="switch-btn" type="button" aria-label="前の運転手">◀</button>
+    <div class="switch-center">
+      <strong id="activeWorkerLabel">運転手</strong>
+      <span id="activeWorkerPosition">1 / 1</span>
+    </div>
+    <button id="nextWorkerBtn" class="switch-btn" type="button" aria-label="次の運転手">▶</button>
   </section>
 
   <main id="workers"></main>
@@ -109,6 +118,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
-<script src="app.js?v=3.1.1"></script>
+<script src="app.js?v=4.0.0"></script>
 </body>
 </html>
