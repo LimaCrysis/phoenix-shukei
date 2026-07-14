@@ -1,4 +1,4 @@
-集計アプリ Phoenix Ver.2.0.1 運転手版 GitHub公開版
+集計アプリ Ver.2.0.2 GitHub公開版
 
 1. ZIPを解凍してください。
 2. index.html、style.css、app.jsをGitHubのphoenix-shukeiへアップロードしてください。
