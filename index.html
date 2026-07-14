@@ -11,7 +11,7 @@
 <div class="app">
   <header>
     <h1>集計アプリ</h1>
-    <div class="version">Ver.2.1.0</div>
+    <div class="version">Ver.2.2.0</div>
     <div id="saveStatus" class="save-status">未保存</div>
   </header>
 
@@ -54,6 +54,7 @@
   <form id="settingsForm" class="settings-modal" method="dialog">
     <h2>単価設定</h2>
     <div id="settingsFields"></div>
+    <button id="addLocationBtn" class="add-location" type="button">＋ 場所を追加</button>
     <p class="small-note">変更後の単価は新しい計算に反映されます。保存済み履歴の金額は変わりません。</p>
     <div class="modal-actions">
       <button class="action" value="cancel">キャンセル</button>
@@ -62,6 +63,8 @@
   </form>
 </dialog>
 
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
