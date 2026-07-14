@@ -11,7 +11,8 @@
 <div class="app">
   <header>
     <h1>集計アプリ</h1>
-    <div class="version">Ver.2.0.2</div>
+    <div class="version">Ver.2.1.0</div>
+    <div id="saveStatus" class="save-status">未保存</div>
   </header>
 
   <section class="panel">
@@ -21,18 +22,7 @@
     </div>
   </section>
 
-  <main id="workers">
-    <!-- JavaScriptが動かない場合でも、運転手の名前欄は必ず表示されます -->
-    <section class="worker" data-fallback="true">
-      <div class="worker-title">運転手</div>
-      <input class="worker-name" type="text" placeholder="運転手名を入力">
-      <div class="task"><div><div class="task-name">横浜20F</div><span class="unit">15,500円 / 回</span></div><div class="counter"><button class="minus" type="button">−</button><span class="count">0</span><button class="plus" type="button">＋</button></div></div>
-      <div class="task"><div><div class="task-name">横浜40F</div><span class="unit">20,500円 / 回</span></div><div class="counter"><button class="minus" type="button">−</button><span class="count">0</span><button class="plus" type="button">＋</button></div></div>
-      <div class="task"><div><div class="task-name">東京20F</div><span class="unit">13,000円 / 回</span></div><div class="counter"><button class="minus" type="button">−</button><span class="count">0</span><button class="plus" type="button">＋</button></div></div>
-      <div class="task"><div><div class="task-name">東京40F</div><span class="unit">18,000円 / 回</span></div><div class="counter"><button class="minus" type="button">−</button><span class="count">0</span><button class="plus" type="button">＋</button></div></div>
-      <div class="worker-total"><span>運転手合計</span><strong>0円</strong></div>
-    </section>
-  </main>
+  <main id="workers"></main>
 
   <button id="addWorkerBtn" class="add-worker" type="button">＋ 運転手を追加</button>
 
@@ -44,11 +34,33 @@
   <section class="actions">
     <button id="saveBtn" class="action primary" type="button">保存</button>
     <button id="pdfBtn" class="action" type="button">PDF保存</button>
+    <button id="settingsBtn" class="action" type="button">単価設定</button>
     <button id="resetBtn" class="action danger" type="button">全員リセット</button>
+  </section>
+
+  <section class="panel history-panel">
+    <div class="history-head">
+      <h2>保存履歴</h2>
+      <span id="historyCount">0件</span>
+    </div>
+    <input id="historySearch" class="search-input" type="text" placeholder="日付・運転手名で検索">
+    <div id="historyList"></div>
   </section>
 
   <div class="notice">運転手別の回数と金額を集計できます</div>
 </div>
+
+<dialog id="settingsDialog">
+  <form id="settingsForm" class="settings-modal" method="dialog">
+    <h2>単価設定</h2>
+    <div id="settingsFields"></div>
+    <p class="small-note">変更後の単価は新しい計算に反映されます。保存済み履歴の金額は変わりません。</p>
+    <div class="modal-actions">
+      <button class="action" value="cancel">キャンセル</button>
+      <button id="saveSettingsBtn" class="action primary" type="button">保存</button>
+    </div>
+  </form>
+</dialog>
 
 <script src="app.js"></script>
 </body>
