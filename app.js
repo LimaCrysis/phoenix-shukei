@@ -378,7 +378,11 @@
       main.addEventListener("click",function(){loadRecord(record);});
       var actions=document.createElement("div");actions.className="history-actions";
       var pdf=document.createElement("button");pdf.className="mini";pdf.type="button";pdf.textContent="PDF";
-      pdf.addEventListener("click",function(){createPdf(record);});
+      pdf.addEventListener("click",function(){
+        pendingPdfRecord=clone(record);
+        var dialog=document.getElementById("pdfShareNoticeDialog");
+        if(dialog && !dialog.open)dialog.showModal();
+      });
       var del=document.createElement("button");del.className="mini";del.type="button";del.textContent="削除";
       del.addEventListener("click",function(){
         if(confirm("この履歴を削除しますか？")){
@@ -606,6 +610,19 @@
   }
 
   async function createPdf(record){
+    var previewWindow=window.open("","_blank");
+    if(previewWindow){
+      previewWindow.document.write(
+        '<!doctype html><html lang="ja"><head><meta charset="utf-8">'+
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+        '<title>詳細PDFを作成中</title>'+
+        '<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;'+
+        'display:flex;align-items:center;justify-content:center;min-height:100vh;'+
+        'margin:0;background:#f3f6fb;color:#172033}div{text-align:center;font-weight:800}</style>'+
+        '</head><body><div>詳細PDFを作成しています…</div></body></html>'
+      );
+      previewWindow.document.close();
+    }
     if(typeof html2canvas==="undefined"||!window.jspdf){
       alert("PDF機能の読み込みに失敗しました。通信状態を確認して再読み込みしてください。");
       return;
@@ -636,14 +653,21 @@
         y+=sliceHeight;page++;
       }
       var fileName="詳細PDF_"+record.date+".pdf";
-      // Safariのダウンロード一覧へ登録されやすい標準保存方式を使用します。
-      pdf.save(fileName);
-      var savedName=document.getElementById("pdfSavedFileName");
-      if(savedName)savedName.textContent=fileName;
-      var savedDialog=document.getElementById("pdfSavedDialog");
-      if(savedDialog && !savedDialog.open)savedDialog.showModal();
+      var pdfBlob=pdf.output("blob");
+      var pdfUrl=URL.createObjectURL(pdfBlob);
+
+      if(previewWindow && !previewWindow.closed){
+        previewWindow.location.replace(pdfUrl);
+        window.setTimeout(function(){
+          URL.revokeObjectURL(pdfUrl);
+        },10*60*1000);
+      }else{
+        downloadPdfBlob(pdfBlob,fileName);
+        alert("PDF画面を開けなかったため、PDFファイルとして保存しました。");
+      }
     }catch(e){
       console.error(e);
+      if(previewWindow && !previewWindow.closed)previewWindow.close();
       alert("詳細PDFの作成に失敗しました。もう一度お試しください。");
     }finally{
       if(sheet)sheet.remove();
@@ -651,13 +675,34 @@
     }
   }
 
+  var pendingPdfRecord=null;
+
   function printCurrent(){
     var valid=validWorkers();
-    if(valid.length===0){alert("PDFに出力できる運転手がいません。");return;}
-    createPdf({
-      date:currentDate,workers:clone(valid),prices:clone(PRICES),
+    if(valid.length===0){
+      alert("PDFに出力できる運転手がいません。");
+      return;
+    }
+
+    pendingPdfRecord={
+      date:currentDate,
+      workers:clone(valid),
+      prices:clone(PRICES),
       total:valid.reduce(function(sum,w){return sum+workerTotal(w);},0)
-    });
+    };
+
+    var dialog=document.getElementById("pdfShareNoticeDialog");
+    if(dialog && !dialog.open)dialog.showModal();
+  }
+
+  function continuePdfOpen(){
+    var dialog=document.getElementById("pdfShareNoticeDialog");
+    if(dialog && dialog.open)dialog.close();
+
+    if(!pendingPdfRecord)return;
+    var record=pendingPdfRecord;
+    pendingPdfRecord=null;
+    createPdf(record);
   }
 
 
@@ -886,8 +931,10 @@
   document.getElementById("nextWorkerBtn").addEventListener("click",function(){changeWorker(1);});
   document.getElementById("resetBtn").addEventListener("click",resetAll);
   document.getElementById("pdfBtn").addEventListener("click",printCurrent);
-  document.getElementById("closePdfSavedDialog").addEventListener("click",function(){
-    document.getElementById("pdfSavedDialog").close();
+  document.getElementById("continuePdfOpenBtn").addEventListener("click",continuePdfOpen);
+  document.getElementById("cancelPdfOpenBtn").addEventListener("click",function(){
+    pendingPdfRecord=null;
+    document.getElementById("pdfShareNoticeDialog").close();
   });
   document.getElementById("settingsBtn").addEventListener("click",openSettings);
   document.getElementById("addLocationBtn").addEventListener("click",addLocation);
