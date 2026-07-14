@@ -27,7 +27,6 @@
   ];
 
   var workersEl = document.getElementById("workers");
-  var grandTotalEl = document.getElementById("grandTotal");
   var workDateEl = document.getElementById("workDate");
   var saveStatusEl = document.getElementById("saveStatus");
 
@@ -123,8 +122,13 @@
 
   function autoSave(){
     updatedAt=new Date().toISOString();
-    saveJSON(STORAGE.draft,{date:currentDate,workers:workers,updatedAt:updatedAt});
+    saveJSON(STORAGE.draft,{
+      date:currentDate,
+      workers:clone(workers),
+      updatedAt:updatedAt
+    });
     renderStatus("自動保存");
+    autoSaveHistory();
   }
 
   function renderStatus(label){
@@ -225,8 +229,6 @@
       }
       workersEl.appendChild(card);
     });
-
-    grandTotalEl.textContent=formatYen(workers.reduce(function(sum,w){return sum+workerTotal(w);},0));
     workDateEl.value=currentDate;
     renderHistory();
   }
@@ -247,19 +249,47 @@
     }
   }
 
-  function saveHistory(){
+  function autoSaveHistory(){
     var valid=validWorkers();
-    if(valid.length===0){alert("名前が入力され、本数が1本以上ある運転手がいません。");return;}
     var history=loadJSON(STORAGE.history,[]);
+
+    // 同じ日付の自動保存データは常に1件へまとめます。
+    var existingIndex=history.findIndex(function(record){
+      return record.date===currentDate && record.autoSaved===true;
+    });
+
+    if(valid.length===0){
+      if(existingIndex!==-1){
+        history.splice(existingIndex,1);
+        saveJSON(STORAGE.history,history);
+      }
+      renderHistory();
+      return;
+    }
+
     var record={
-      id:uid(),date:currentDate,workers:clone(valid),prices:clone(PRICES),
+      id:existingIndex!==-1 ? history[existingIndex].id : uid(),
+      date:currentDate,
+      workers:clone(valid),
+      prices:clone(PRICES),
       total:valid.reduce(function(sum,w){return sum+workerTotal(w);},0),
-      savedAt:new Date().toISOString()
+      savedAt:new Date().toISOString(),
+      autoSaved:true
     };
-    history.unshift(record);saveJSON(STORAGE.history,history);
-    updatedAt=record.savedAt;
-    saveJSON(STORAGE.draft,{date:currentDate,workers:workers,updatedAt:updatedAt});
-    renderStatus("履歴保存済み");renderHistory();alert("履歴に保存しました。");
+
+    if(existingIndex!==-1){
+      history[existingIndex]=record;
+    }else{
+      history.unshift(record);
+    }
+
+    history.sort(function(a,b){
+      return String(b.date).localeCompare(String(a.date)) ||
+        String(b.savedAt||"").localeCompare(String(a.savedAt||""));
+    });
+
+    saveJSON(STORAGE.history,history);
+    renderHistory();
   }
 
   function renderHistory(){
@@ -296,7 +326,7 @@
   }
 
   function loadRecord(record){
-    if(confirm("この履歴を入力画面へ読み込みますか？")){
+    if(confirm("この自動保存履歴を入力画面へ読み込みますか？")){
       currentDate=record.date;
       PRICES=clone(record.prices||PRICES);
       workers=clone(record.workers);workers.push(newWorker());
@@ -663,7 +693,6 @@
 
   document.getElementById("addWorkerBtn").addEventListener("click",addWorker);
   document.getElementById("resetBtn").addEventListener("click",resetAll);
-  document.getElementById("saveBtn").addEventListener("click",saveHistory);
   document.getElementById("pdfBtn").addEventListener("click",printCurrent);
   document.getElementById("settingsBtn").addEventListener("click",openSettings);
   document.getElementById("addLocationBtn").addEventListener("click",addLocation);
@@ -678,5 +707,8 @@
   });
 
   render();
-  if(updatedAt)renderStatus("自動保存");
+  if(updatedAt){
+    renderStatus("自動保存");
+    autoSaveHistory();
+  }
 })();

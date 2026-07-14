@@ -570,3 +570,10 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
     grid-template-columns:1fr;
   }
 }
+
+.actions{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+@media(max-width:380px){
+  .actions{grid-template-columns:1fr}
+}
