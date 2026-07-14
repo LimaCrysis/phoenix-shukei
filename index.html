@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <title>集計アプリ</title>
-<link rel="stylesheet" href="style.css?v=4.0.0">
+<link rel="stylesheet" href="style.css?v=5.0.0">
 </head>
 <body>
 <div class="app">
   <header>
     <h1>集計アプリ</h1>
-    <div class="version">Ver.4.0.0</div>
+    <div class="version">Ver.5.0.0</div>
     <div id="saveStatus" class="save-status">未保存</div>
   </header>
 
@@ -32,8 +32,6 @@
   </section>
 
   <main id="workers"></main>
-
-  <button id="addWorkerBtn" class="add-worker" type="button">＋ 運転手を追加</button>
 
   <section class="actions">
     <button id="pdfBtn" class="action" type="button">PDF保存</button>
@@ -87,6 +85,18 @@
       <button class="dialog-close" type="button" data-close-dialog="managementDialog">閉じる</button>
     </div>
 
+
+    <section class="driver-management-block">
+      <h3>運転手管理</h3>
+      <p class="management-note">登録した運転手は日付や月が変わっても固定されます。最大10人まで登録できます。</p>
+      <div id="driverRosterList"></div>
+      <div class="driver-add-row">
+        <input id="newDriverName" type="text" placeholder="運転手名を入力">
+        <button id="addDriverBtn" type="button">＋ 運転手を追加</button>
+      </div>
+      <div id="driverLimitNote" class="driver-limit-note"></div>
+    </section>
+
     <div class="month-select">
       <label for="managementMonth">集計月</label>
       <input id="managementMonth" type="month">
@@ -118,6 +128,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
-<script src="app.js?v=4.0.0"></script>
+<script src="app.js?v=5.0.0"></script>
 </body>
 </html>

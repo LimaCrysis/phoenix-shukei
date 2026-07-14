@@ -16,7 +16,8 @@
   var STORAGE = {
     draft:"shukei_draft_v210",
     history:"shukei_history_v210",
-    prices:"shukei_prices_v210"
+    prices:"shukei_prices_v210",
+    drivers:"shukei_drivers_v500"
   };
 
   var DEFAULT_PRICES = [
@@ -36,6 +37,23 @@
   var currentDate = draft && draft.date ? draft.date : todayValue();
   var updatedAt = draft && draft.updatedAt ? draft.updatedAt : null;
   var activeWorkerIndex = 0;
+  var MAX_DRIVERS = 10;
+  var driverRoster = loadJSON(STORAGE.drivers, []);
+
+  // 旧版で入力済みの名前を初回だけ固定運転手へ移行します。
+  if(driverRoster.length===0){
+    var migratedNames=[];
+    workers.forEach(function(worker){
+      var name=(worker.name || "").trim();
+      if(name && migratedNames.indexOf(name)===-1 && migratedNames.length<MAX_DRIVERS){
+        migratedNames.push(name);
+      }
+    });
+    driverRoster=migratedNames.map(function(name){
+      return {id:uid(),name:name};
+    });
+    saveJSON(STORAGE.drivers,driverRoster);
+  }
 
   function clone(value){ return JSON.parse(JSON.stringify(value)); }
 
@@ -70,10 +88,44 @@
     return "place_" + Date.now() + "_" + Math.random().toString(36).slice(2,7);
   }
 
-  function newWorker(){
+  function newWorker(driver){
     var counts = {};
     PRICES.forEach(function(item){ counts[item.key] = 0; });
-    return {id:uid(),name:"",counts:counts};
+    return {
+      id:driver ? driver.id : uid(),
+      driverId:driver ? driver.id : null,
+      name:driver ? driver.name : "",
+      counts:counts
+    };
+  }
+
+  function createWorkersFromRoster(){
+    return driverRoster.map(function(driver){
+      return newWorker(driver);
+    });
+  }
+
+  function syncWorkersWithRoster(preserveCounts){
+    var oldByDriver={};
+    workers.forEach(function(worker){
+      var key=worker.driverId || worker.id;
+      oldByDriver[key]=worker;
+    });
+
+    workers=driverRoster.map(function(driver){
+      var previous=oldByDriver[driver.id];
+      var next=newWorker(driver);
+      if(preserveCounts && previous && previous.counts){
+        PRICES.forEach(function(place){
+          next.counts[place.key]=Number(previous.counts[place.key] || 0);
+        });
+      }
+      return next;
+    });
+
+    if(activeWorkerIndex>=workers.length){
+      activeWorkerIndex=Math.max(0,workers.length-1);
+    }
   }
 
   function normalizeWorkers(){
@@ -108,9 +160,23 @@
 
   function ensureWorkers(){
     normalizeWorkers();
-    if(workers.length===0)workers.push(newWorker());
+
+    var rosterIds=driverRoster.map(function(driver){return driver.id;});
+    var mismatch=workers.length!==driverRoster.length ||
+      workers.some(function(worker,index){
+        return !driverRoster[index] ||
+          (worker.driverId || worker.id)!==driverRoster[index].id ||
+          worker.name!==driverRoster[index].name;
+      });
+
+    if(mismatch){
+      syncWorkersWithRoster(true);
+    }
+
     if(activeWorkerIndex<0)activeWorkerIndex=0;
-    if(activeWorkerIndex>=workers.length)activeWorkerIndex=workers.length-1;
+    if(workers.length && activeWorkerIndex>=workers.length){
+      activeWorkerIndex=workers.length-1;
+    }
   }
 
   function autoSave(){
@@ -145,6 +211,21 @@
   function render(){
     ensureWorkers();
     workersEl.innerHTML="";
+    workDateEl.value=currentDate;
+
+    if(workers.length===0){
+      document.getElementById("activeWorkerLabel").textContent="運転手未登録";
+      document.getElementById("activeWorkerPosition").textContent="0 / 0";
+      document.getElementById("prevWorkerBtn").disabled=true;
+      document.getElementById("nextWorkerBtn").disabled=true;
+
+      var empty=document.createElement("section");
+      empty.className="no-driver-message";
+      empty.innerHTML="管理画面の「運転手管理」から運転手を登録してください。";
+      workersEl.appendChild(empty);
+      renderHistory();
+      return;
+    }
 
     var worker=workers[activeWorkerIndex];
     var card=document.createElement("section");
@@ -152,23 +233,8 @@
 
     var title=document.createElement("div");
     title.className="worker-title";
-    title.textContent="運転手";
-
-    var name=document.createElement("input");
-    name.className="worker-name";
-    name.type="text";
-    name.placeholder="運転手名を入力";
-    name.value=worker.name;
-
-    name.addEventListener("input",function(){
-      worker.name=name.value;
-      document.getElementById("activeWorkerLabel").textContent=
-        worker.name.trim() || "新しい運転手";
-      autoSave();
-    });
-
+    title.textContent=worker.name;
     card.appendChild(title);
-    card.appendChild(name);
 
     PRICES.forEach(function(item){
       var row=document.createElement("div");
@@ -227,23 +293,7 @@
       formatYen(workerTotal(worker))+"</strong>";
     card.appendChild(total);
 
-    if(workers.length>1){
-      var remove=document.createElement("button");
-      remove.type="button";
-      remove.className="remove";
-      remove.textContent="この運転手を削除";
-      remove.addEventListener("click",function(){
-        if(!confirm((worker.name || "この運転手")+"を削除しますか？"))return;
-        workers.splice(activeWorkerIndex,1);
-        if(activeWorkerIndex>=workers.length)activeWorkerIndex=workers.length-1;
-        autoSave();
-        render();
-      });
-      card.appendChild(remove);
-    }
-
     workersEl.appendChild(card);
-    workDateEl.value=currentDate;
     renderSwitcher();
     renderHistory();
   }
@@ -255,18 +305,9 @@
     render();
   }
 
-  function addWorker(){
-    workers.push(newWorker());
-    activeWorkerIndex=workers.length-1;
-    autoSave();
-    render();
-    var field=document.querySelector(".worker-name");
-    if(field)field.focus();
-  }
-
   function resetAll(){
     if(confirm("全員の入力内容をリセットしますか？")){
-      workers=[newWorker()];
+      workers=createWorkersFromRoster();
       activeWorkerIndex=0;
       autoSave();
       render();
@@ -353,7 +394,14 @@
     if(confirm("この自動保存履歴を入力画面へ読み込みますか？")){
       currentDate=record.date;
       PRICES=clone(record.prices||PRICES);
-      workers=clone(record.workers);
+      var loaded=clone(record.workers);
+      workers=createWorkersFromRoster();
+      workers.forEach(function(worker){
+        var match=loaded.find(function(old){
+          return (old.driverId && old.driverId===worker.driverId) || old.name===worker.name;
+        });
+        if(match && match.counts)worker.counts=clone(match.counts);
+      });
       activeWorkerIndex=0;
       saveJSON(STORAGE.prices,PRICES);autoSave();render();window.scrollTo({top:0,behavior:"smooth"});
     }
@@ -596,6 +644,95 @@
   }
 
 
+  function saveDriverRoster(){
+    saveJSON(STORAGE.drivers,clone(driverRoster));
+    syncWorkersWithRoster(true);
+    autoSave();
+    renderDriverRoster();
+    render();
+  }
+
+  function renderDriverRoster(){
+    var list=document.getElementById("driverRosterList");
+    if(!list)return;
+    list.innerHTML="";
+
+    driverRoster.forEach(function(driver,index){
+      var row=document.createElement("div");
+      row.className="driver-roster-item";
+
+      var input=document.createElement("input");
+      input.type="text";
+      input.value=driver.name;
+      input.setAttribute("aria-label","運転手名");
+
+      input.addEventListener("change",function(){
+        var next=input.value.trim();
+        if(!next){
+          alert("名前を空欄にする場合は削除ボタンを使用してください。");
+          input.value=driver.name;
+          return;
+        }
+        if(driverRoster.some(function(other,i){return i!==index && other.name===next;})){
+          alert("同じ運転手名が登録されています。");
+          input.value=driver.name;
+          return;
+        }
+        driver.name=next;
+        saveDriverRoster();
+      });
+
+      var remove=document.createElement("button");
+      remove.type="button";
+      remove.className="driver-roster-remove";
+      remove.textContent="削除";
+      remove.addEventListener("click",function(){
+        if(!confirm(driver.name+"を運転手管理から削除しますか？"))return;
+        driverRoster.splice(index,1);
+        saveDriverRoster();
+      });
+
+      row.appendChild(input);
+      row.appendChild(remove);
+      list.appendChild(row);
+    });
+
+    var addButton=document.getElementById("addDriverBtn");
+    var note=document.getElementById("driverLimitNote");
+    if(addButton)addButton.disabled=driverRoster.length>=MAX_DRIVERS;
+    if(note){
+      note.textContent=driverRoster.length>=MAX_DRIVERS ?
+        "登録上限の10人です。" :
+        "登録済み "+driverRoster.length+" / "+MAX_DRIVERS+"人";
+    }
+  }
+
+  function addDriverFromManagement(){
+    var input=document.getElementById("newDriverName");
+    var name=input.value.trim();
+
+    if(!name){
+      alert("運転手名を入力してください。");
+      input.focus();
+      return;
+    }
+    if(driverRoster.length>=MAX_DRIVERS){
+      alert("運転手は最大10人まで登録できます。");
+      return;
+    }
+    if(driverRoster.some(function(driver){return driver.name===name;})){
+      alert("同じ運転手名がすでに登録されています。");
+      input.focus();
+      return;
+    }
+
+    driverRoster.push({id:uid(),name:name});
+    input.value="";
+    activeWorkerIndex=driverRoster.length-1;
+    saveDriverRoster();
+    input.focus();
+  }
+
   function currentMonthValue(){
     var d=new Date();
     var local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
@@ -603,6 +740,7 @@
   }
 
   function openManagement(){
+    renderDriverRoster();
     var monthInput=document.getElementById("managementMonth");
     if(!monthInput.value)monthInput.value=currentMonthValue();
     renderManagement();
@@ -724,18 +862,21 @@
     if(validWorkers().length>0&&!confirm("日付を変更すると名前と本数をリセットします。よろしいですか？")){
       workDateEl.value=currentDate;return;
     }
-    currentDate=next;workers=[newWorker()];activeWorkerIndex=0;autoSave();render();
+    currentDate=next;workers=createWorkersFromRoster();activeWorkerIndex=0;autoSave();render();
   });
 
   document.getElementById("prevWorkerBtn").addEventListener("click",function(){changeWorker(-1);});
   document.getElementById("nextWorkerBtn").addEventListener("click",function(){changeWorker(1);});
-  document.getElementById("addWorkerBtn").addEventListener("click",addWorker);
   document.getElementById("resetBtn").addEventListener("click",resetAll);
   document.getElementById("pdfBtn").addEventListener("click",printCurrent);
   document.getElementById("settingsBtn").addEventListener("click",openSettings);
   document.getElementById("addLocationBtn").addEventListener("click",addLocation);
   document.getElementById("historySearch").addEventListener("input",renderHistory);
   document.getElementById("managementBtn").addEventListener("click",openManagement);
+  document.getElementById("addDriverBtn").addEventListener("click",addDriverFromManagement);
+  document.getElementById("newDriverName").addEventListener("keydown",function(event){
+    if(event.key==="Enter"){event.preventDefault();addDriverFromManagement();}
+  });
   document.getElementById("managementMonth").addEventListener("change",renderManagement);
   document.querySelectorAll("[data-close-dialog]").forEach(function(button){
     button.addEventListener("click",function(){
@@ -744,6 +885,7 @@
     });
   });
 
+  syncWorkersWithRoster(true);
   render();
   if(updatedAt){
     renderStatus("自動保存");
