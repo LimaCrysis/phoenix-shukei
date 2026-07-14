@@ -292,38 +292,66 @@
     }
   }
 
-  function openSettings(){
+  function syncSettingsInputs(){
+    var labels=document.querySelectorAll(".place-label");
+    var values=document.querySelectorAll(".place-price");
+    for(var i=0;i<PRICES.length;i++){
+      if(labels[i]) PRICES[i].label=labels[i].value.trim() || PRICES[i].label;
+      if(values[i]){
+        var price=Number(values[i].value);
+        if(Number.isFinite(price) && price>=0) PRICES[i].price=price;
+      }
+    }
+  }
+
+  function renderSettingsFields(){
     var fields=document.getElementById("settingsFields");
     fields.innerHTML="";
     PRICES.forEach(function(item,index){
-      var box=document.createElement("div");box.className="setting-place";
+      var box=document.createElement("div");
+      box.className="setting-place";
       box.innerHTML='<div class="setting-place-grid">'+
         '<div><label for="label-'+index+'">場所名</label><input id="label-'+index+'" class="place-label" type="text" value="'+escapeAttr(item.label)+'"></div>'+
         '<div><label for="price-'+index+'">単価</label><input id="price-'+index+'" class="place-price" type="number" min="0" step="100" value="'+item.price+'"></div>'+
         '</div>';
+
       if(PRICES.length>1){
         var remove=document.createElement("button");
-        remove.type="button";remove.className="remove-location";remove.textContent="この場所を削除";
+        remove.type="button";
+        remove.className="remove-location";
+        remove.textContent="この場所を削除";
         remove.addEventListener("click",function(){
-          if(confirm(item.label+"を削除しますか？")){
+          syncSettingsInputs();
+          if(confirm((PRICES[index].label || "この場所")+"を削除しますか？")){
             PRICES.splice(index,1);
             normalizeWorkers();
             saveJSON(STORAGE.prices,PRICES);
-            openSettings();render();autoSave();
+            renderSettingsFields();
+            render();
+            autoSave();
           }
         });
         box.appendChild(remove);
       }
       fields.appendChild(box);
     });
-    document.getElementById("settingsDialog").showModal();
+  }
+
+  function openSettings(){
+    renderSettingsFields();
+    var dialog=document.getElementById("settingsDialog");
+    if(!dialog.open) dialog.showModal();
   }
 
   function addLocation(){
+    syncSettingsInputs();
     PRICES.push({key:newPlaceKey(),label:"新しい場所",price:0});
-    openSettings();
+    renderSettingsFields();
     var labels=document.querySelectorAll(".place-label");
-    if(labels.length){labels[labels.length-1].focus();labels[labels.length-1].select();}
+    if(labels.length){
+      labels[labels.length-1].focus();
+      labels[labels.length-1].select();
+    }
   }
 
   function saveSettings(){
