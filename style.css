@@ -577,3 +577,46 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 @media(max-width:380px){
   .actions{grid-template-columns:1fr}
 }
+
+.management-summary{
+  grid-template-columns:repeat(2,1fr);
+}
+.driver-breakdown{
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden;
+  margin-bottom:12px;
+  background:#fff;
+}
+.driver-breakdown h4{
+  margin:0;
+  padding:11px 12px;
+  background:#f3f6fb;
+  font-size:16px;
+}
+.driver-breakdown-total{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 12px;
+  border-top:1px solid var(--line);
+  font-weight:900;
+}
+.driver-breakdown table{
+  width:100%;
+  border-collapse:collapse;
+}
+.driver-breakdown th,
+.driver-breakdown td{
+  padding:9px 10px;
+  border-top:1px solid var(--line);
+  text-align:right;
+}
+.driver-breakdown th:first-child,
+.driver-breakdown td:first-child{
+  text-align:left;
+}
+.driver-breakdown th{
+  color:var(--muted);
+  font-size:12px;
+}

@@ -606,10 +606,7 @@
 
     var driverMap={};
     var driverOrder=[];
-    var placeMap={};
-    var placeOrder=[];
     var totalAmount=0;
-    var totalCount=0;
     var dateSet={};
 
     records.forEach(function(record){
@@ -619,8 +616,15 @@
 
       record.workers.forEach(function(worker){
         var driverName=(worker.name || "").trim();
-        if(driverName && !driverMap[driverName]){
-          driverMap[driverName]={count:0,amount:0};
+        if(!driverName)return;
+
+        if(!driverMap[driverName]){
+          driverMap[driverName]={
+            amount:0,
+            count:0,
+            places:{},
+            placeOrder:[]
+          };
           driverOrder.push(driverName);
         }
 
@@ -632,45 +636,52 @@
           if(!place)return;
 
           var amount=count*Number(place.price || 0);
-          totalCount+=count;
+          driverMap[driverName].count+=count;
+          driverMap[driverName].amount+=amount;
 
-          if(driverName){
-            driverMap[driverName].count+=count;
-            driverMap[driverName].amount+=amount;
+          if(!driverMap[driverName].places[place.label]){
+            driverMap[driverName].places[place.label]={count:0,amount:0};
+            driverMap[driverName].placeOrder.push(place.label);
           }
 
-          if(!placeMap[place.label]){
-            placeMap[place.label]={count:0,amount:0};
-            placeOrder.push(place.label);
-          }
-          placeMap[place.label].count+=count;
-          placeMap[place.label].amount+=amount;
+          driverMap[driverName].places[place.label].count+=count;
+          driverMap[driverName].places[place.label].amount+=amount;
         });
       });
     });
 
     document.getElementById("monthlyAmount").textContent=formatYen(totalAmount);
-    document.getElementById("monthlyCount").textContent=totalCount.toLocaleString("ja-JP")+"本";
     document.getElementById("monthlyDays").textContent=Object.keys(dateSet).length+"日";
 
-    var driverRows=document.getElementById("driverMonthlyRows");
-    driverRows.innerHTML="";
-    driverOrder.forEach(function(name){
-      var row=document.createElement("tr");
-      row.innerHTML="<td>"+escapeHTML(name)+"</td>"+
-        "<td>"+driverMap[name].count.toLocaleString("ja-JP")+"本</td>"+
-        "<td>"+formatYen(driverMap[name].amount)+"</td>";
-      driverRows.appendChild(row);
-    });
+    var breakdown=document.getElementById("driverPlaceBreakdown");
+    breakdown.innerHTML="";
 
-    var placeRows=document.getElementById("placeMonthlyRows");
-    placeRows.innerHTML="";
-    placeOrder.forEach(function(label){
-      var row=document.createElement("tr");
-      row.innerHTML="<td>"+escapeHTML(label)+"</td>"+
-        "<td>"+placeMap[label].count.toLocaleString("ja-JP")+"本</td>"+
-        "<td>"+formatYen(placeMap[label].amount)+"</td>";
-      placeRows.appendChild(row);
+    driverOrder.forEach(function(name){
+      var driver=driverMap[name];
+      var section=document.createElement("section");
+      section.className="driver-breakdown";
+
+      var rows=driver.placeOrder.map(function(label){
+        var place=driver.places[label];
+        return "<tr>"+
+          "<td>"+escapeHTML(label)+"</td>"+
+          "<td>"+place.count.toLocaleString("ja-JP")+"本</td>"+
+          "<td>"+formatYen(place.amount)+"</td>"+
+        "</tr>";
+      }).join("");
+
+      section.innerHTML=
+        "<h4>"+escapeHTML(name)+"</h4>"+
+        "<table>"+
+          "<thead><tr><th>場所</th><th>本数</th><th>金額</th></tr></thead>"+
+          "<tbody>"+rows+"</tbody>"+
+        "</table>"+
+        "<div class=\"driver-breakdown-total\">"+
+          "<span>運転手合計 "+driver.count.toLocaleString("ja-JP")+"本</span>"+
+          "<strong>"+formatYen(driver.amount)+"</strong>"+
+        "</div>";
+
+      breakdown.appendChild(section);
     });
   }
 
