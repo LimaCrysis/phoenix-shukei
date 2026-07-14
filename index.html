@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>集計アプリ Phoenix</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>集計アプリ Phoenix</h1>
+    <div class="version">Ver.2.0 GitHub</div>
+  </header>
+
+  <section class="panel">
+    <div class="date-wrap">
+      <label for="workDate">日付</label>
+      <input id="workDate" type="date">
+    </div>
+  </section>
+
+  <main id="workers">
+    <!-- JavaScriptが動かない場合でも、作業者1の名前欄は必ず表示されます -->
+    <section class="worker" data-fallback="true">
+      <div class="worker-title">作業者1</div>
+      <input class="worker-name" type="text" placeholder="名前を入力">
+      <div class="task"><div><div class="task-name">横浜20F</div><span class="unit">15,500円 / 回</span></div><div class="counter"><button class="minus" type="button">−</button><span class="count">0</span><button class="plus" type="button">＋</button></div></div>
+      <div class="task"><div><div class="task-name">横浜40F</div><span class="unit">20,500円 / 回</span></div><div class="counter"><button class="minus" type="button">−</button><span class="count">0</span><button class="plus" type="button">＋</button></div></div>
+      <div class="task"><div><div class="task-name">東京20F</div><span class="unit">13,000円 / 回</span></div><div class="counter"><button class="minus" type="button">−</button><span class="count">0</span><button class="plus" type="button">＋</button></div></div>
+      <div class="task"><div><div class="task-name">東京40F</div><span class="unit">18,000円 / 回</span></div><div class="counter"><button class="minus" type="button">−</button><span class="count">0</span><button class="plus" type="button">＋</button></div></div>
+      <div class="worker-total"><span>作業者合計</span><strong>0円</strong></div>
+    </section>
+  </main>
+
+  <button id="addWorkerBtn" class="add-worker" type="button">＋ 作業者を追加</button>
+
+  <section class="grand">
+    <span>総合計</span>
+    <strong id="grandTotal">0円</strong>
+  </section>
+
+  <section class="actions">
+    <button id="saveBtn" class="action primary" type="button">保存</button>
+    <button id="pdfBtn" class="action" type="button">PDF保存</button>
+    <button id="resetBtn" class="action danger" type="button">全員リセット</button>
+  </section>
+
+  <div class="notice">iPhoneではSafariまたは「ファイル」アプリから開けます</div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
