@@ -381,3 +381,36 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 @media(max-width:430px){
   .setting-place-grid{grid-template-columns:1fr}
 }
+
+.new-location-box{
+  border:2px solid var(--primary);
+  border-radius:13px;
+  padding:13px;
+  margin:14px 0 12px;
+  background:rgba(23,105,224,.06);
+}
+.new-location-box h3{
+  margin:0 0 10px;
+  font-size:17px;
+}
+.new-location-grid{
+  display:grid;
+  grid-template-columns:1fr 140px;
+  gap:9px;
+}
+.new-location-grid label{
+  display:block;
+  font-weight:900;
+  margin-bottom:5px;
+}
+.new-location-grid input{
+  width:100%;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fff;
+  color:var(--text);
+}
+@media(max-width:430px){
+  .new-location-grid{grid-template-columns:1fr}
+}

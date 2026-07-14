@@ -339,19 +339,56 @@
 
   function openSettings(){
     renderSettingsFields();
+    var nameInput=document.getElementById("newLocationName");
+    var priceInput=document.getElementById("newLocationPrice");
+    if(nameInput) nameInput.value="";
+    if(priceInput) priceInput.value="";
     var dialog=document.getElementById("settingsDialog");
     if(!dialog.open) dialog.showModal();
   }
 
   function addLocation(){
     syncSettingsInputs();
-    PRICES.push({key:newPlaceKey(),label:"新しい場所",price:0});
-    renderSettingsFields();
-    var labels=document.querySelectorAll(".place-label");
-    if(labels.length){
-      labels[labels.length-1].focus();
-      labels[labels.length-1].select();
+
+    var nameInput=document.getElementById("newLocationName");
+    var priceInput=document.getElementById("newLocationPrice");
+    var label=nameInput.value.trim();
+    var price=Number(priceInput.value);
+
+    if(!label){
+      alert("追加する場所名を入力してください。");
+      nameInput.focus();
+      return;
     }
+    if(!Number.isFinite(price) || price<0){
+      alert("追加する単価を正しく入力してください。");
+      priceInput.focus();
+      return;
+    }
+    if(PRICES.some(function(item){return item.label.trim()===label;})){
+      alert("同じ場所名がすでに登録されています。");
+      nameInput.focus();
+      return;
+    }
+
+    var key=newPlaceKey();
+    PRICES.push({key:key,label:label,price:price});
+
+    workers.forEach(function(worker){
+      if(!worker.counts) worker.counts={};
+      worker.counts[key]=0;
+    });
+
+    saveJSON(STORAGE.prices,PRICES);
+    autoSave();
+    renderSettingsFields();
+    render();
+
+    nameInput.value="";
+    priceInput.value="";
+    nameInput.focus();
+
+    alert(label+"を追加しました。");
   }
 
   function saveSettings(){
