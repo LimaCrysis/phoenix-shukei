@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <title>集計アプリ</title>
-<link rel="stylesheet" href="style.css?v=2.2.3">
+<link rel="stylesheet" href="style.css?v=2.3.0">
 </head>
 <body>
 <div class="app">
   <header>
     <h1>集計アプリ</h1>
-    <div class="version">Ver.2.2.3</div>
+    <div class="version">Ver.2.3.0</div>
     <div id="saveStatus" class="save-status">未保存</div>
   </header>
 
@@ -34,7 +34,7 @@
   <section class="actions">
     <button id="saveBtn" class="action primary" type="button">保存</button>
     <button id="pdfBtn" class="action" type="button">PDF保存</button>
-    <button id="settingsBtn" class="action" type="button">単価設定</button>
+    <button id="settingsBtn" class="action" type="button">場所単価</button>
     <button id="resetBtn" class="action danger" type="button">全員リセット</button>
   </section>
 
@@ -52,7 +52,7 @@
 
 <dialog id="settingsDialog">
   <form id="settingsForm" class="settings-modal" method="dialog">
-    <h2>単価設定</h2>
+    <h2>場所単価</h2>
     <div id="settingsFields"></div>
 
     <section class="new-location-box">
@@ -69,16 +69,15 @@
       </div>
       <button id="addLocationBtn" class="add-location" type="button">＋ 場所と単価を追加</button>
     </section>
-    <p class="small-note">変更後の単価は新しい計算に反映されます。保存済み履歴の金額は変わりません。</p>
+    <p class="small-note">追加・変更・削除はその場で自動保存されます。保存済み履歴の金額は変わりません。</p>
     <div class="modal-actions">
-      <button class="action" value="cancel">キャンセル</button>
-      <button id="saveSettingsBtn" class="action primary" type="button">保存</button>
+      <button class="action primary close-settings" value="cancel">閉じる</button>
     </div>
   </form>
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
-<script src="app.js?v=2.2.3"></script>
+<script src="app.js?v=2.3.0"></script>
 </body>
 </html>

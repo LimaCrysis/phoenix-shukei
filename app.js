@@ -1,7 +1,7 @@
 (function(){
   "use strict";
 
-  // 古いPWAキャッシュが残っている場合は自動的に削除します。
+  // Ver.2.3.0: 古いPWAキャッシュが残っている場合は自動的に削除します。
   if("serviceWorker" in navigator){
     navigator.serviceWorker.getRegistrations().then(function(registrations){
       registrations.forEach(function(registration){ registration.unregister(); });
@@ -304,28 +304,97 @@
     }
   }
 
-  function syncSettingsInputs(){
-    var labels=document.querySelectorAll(".place-label");
-    var values=document.querySelectorAll(".place-price");
-    for(var i=0;i<PRICES.length;i++){
-      if(labels[i]) PRICES[i].label=labels[i].value.trim() || PRICES[i].label;
-      if(values[i]){
-        var price=Number(values[i].value);
-        if(Number.isFinite(price) && price>=0) PRICES[i].price=price;
-      }
-    }
+  function persistPlaceSettings(){
+    normalizeWorkers();
+    saveJSON(STORAGE.prices,clone(PRICES));
+    updatedAt=new Date().toISOString();
+    saveJSON(STORAGE.draft,{
+      date:currentDate,
+      workers:clone(workers),
+      updatedAt:updatedAt
+    });
+    renderStatus("自動保存");
+    render();
+  }
+
+  function showSettingSaved(box,message){
+    var status=box.querySelector(".setting-saved");
+    if(!status)return;
+    status.textContent=message || "保存しました";
+    window.setTimeout(function(){
+      if(status)status.textContent="";
+    },1300);
   }
 
   function renderSettingsFields(){
     var fields=document.getElementById("settingsFields");
     fields.innerHTML="";
+
+    var label=document.createElement("div");
+    label.className="settings-section-label";
+    label.textContent="登録済みの場所と単価";
+    fields.appendChild(label);
+
     PRICES.forEach(function(item,index){
       var box=document.createElement("div");
       box.className="setting-place";
-      box.innerHTML='<div class="setting-place-grid">'+
-        '<div><label for="label-'+index+'">場所名</label><input id="label-'+index+'" class="place-label" type="text" value="'+escapeAttr(item.label)+'"></div>'+
-        '<div><label for="price-'+index+'">単価</label><input id="price-'+index+'" class="place-price" type="number" min="0" step="100" value="'+item.price+'"></div>'+
-        '</div>';
+
+      box.innerHTML=
+        '<div class="setting-place-grid">'+
+          '<div>'+
+            '<label for="label-'+index+'">場所名</label>'+
+            '<input id="label-'+index+'" class="place-label" type="text" value="'+escapeAttr(item.label)+'">'+
+          '</div>'+
+          '<div>'+
+            '<label for="price-'+index+'">単価</label>'+
+            '<input id="price-'+index+'" class="place-price" type="number" inputmode="numeric" min="0" step="100" value="'+item.price+'">'+
+          '</div>'+
+        '</div>'+
+        '<div class="setting-saved" aria-live="polite"></div>';
+
+      var labelInput=box.querySelector(".place-label");
+      var priceInput=box.querySelector(".place-price");
+
+      function saveExistingPlace(){
+        var nextLabel=labelInput.value.trim();
+        var nextPrice=Number(priceInput.value);
+
+        if(!nextLabel){
+          alert("場所名を入力してください。");
+          labelInput.value=item.label;
+          labelInput.focus();
+          return;
+        }
+        if(!Number.isFinite(nextPrice) || nextPrice<0){
+          alert(nextLabel+"の単価を正しく入力してください。");
+          priceInput.value=item.price;
+          priceInput.focus();
+          return;
+        }
+        var duplicate=PRICES.some(function(other,otherIndex){
+          return otherIndex!==index && other.label.trim()===nextLabel;
+        });
+        if(duplicate){
+          alert("同じ場所名がすでに登録されています。");
+          labelInput.value=item.label;
+          labelInput.focus();
+          return;
+        }
+
+        item.label=nextLabel;
+        item.price=nextPrice;
+        persistPlaceSettings();
+        showSettingSaved(box,"変更を保存しました");
+      }
+
+      labelInput.addEventListener("change",saveExistingPlace);
+      priceInput.addEventListener("change",saveExistingPlace);
+      labelInput.addEventListener("blur",function(){
+        if(labelInput.value.trim()!==item.label)saveExistingPlace();
+      });
+      priceInput.addEventListener("blur",function(){
+        if(Number(priceInput.value)!==Number(item.price))saveExistingPlace();
+      });
 
       if(PRICES.length>1){
         var remove=document.createElement("button");
@@ -333,35 +402,35 @@
         remove.className="remove-location";
         remove.textContent="この場所を削除";
         remove.addEventListener("click",function(){
-          syncSettingsInputs();
-          if(confirm((PRICES[index].label || "この場所")+"を削除しますか？")){
-            PRICES.splice(index,1);
-            normalizeWorkers();
-            saveJSON(STORAGE.prices,PRICES);
-            renderSettingsFields();
-            render();
-            autoSave();
-          }
+          if(!confirm(item.label+"を削除しますか？"))return;
+
+          PRICES.splice(index,1);
+          workers.forEach(function(worker){
+            if(worker.counts)delete worker.counts[item.key];
+          });
+          persistPlaceSettings();
+          renderSettingsFields();
         });
         box.appendChild(remove);
       }
+
       fields.appendChild(box);
     });
   }
 
   function openSettings(){
     renderSettingsFields();
+
     var nameInput=document.getElementById("newLocationName");
     var priceInput=document.getElementById("newLocationPrice");
-    if(nameInput) nameInput.value="";
-    if(priceInput) priceInput.value="";
+    if(nameInput)nameInput.value="";
+    if(priceInput)priceInput.value="";
+
     var dialog=document.getElementById("settingsDialog");
-    if(!dialog.open) dialog.showModal();
+    if(!dialog.open)dialog.showModal();
   }
 
   function addLocation(){
-    syncSettingsInputs();
-
     var nameInput=document.getElementById("newLocationName");
     var priceInput=document.getElementById("newLocationPrice");
     var label=nameInput.value.trim();
@@ -384,54 +453,21 @@
     }
 
     var key=newPlaceKey();
-    var newPlace={key:key,label:label,price:price};
+    PRICES.push({key:key,label:label,price:price});
 
-    // 設定データへ追加
-    PRICES.push(newPlace);
-
-    // 現在表示中のすべての運転手へ新しい場所の回数欄を追加
     workers.forEach(function(worker){
-      if(!worker.counts) worker.counts={};
+      if(!worker.counts)worker.counts={};
       worker.counts[key]=0;
     });
 
-    // 先に保存してからメイン画面を再描画
-    saveJSON(STORAGE.prices,clone(PRICES));
-    updatedAt=new Date().toISOString();
-    saveJSON(STORAGE.draft,{
-      date:currentDate,
-      workers:clone(workers),
-      updatedAt:updatedAt
-    });
-
-    // 設定画面を更新
+    persistPlaceSettings();
     renderSettingsFields();
 
-    // 入力欄をクリア
-    document.getElementById("newLocationName").value="";
-    document.getElementById("newLocationPrice").value="";
+    nameInput.value="";
+    priceInput.value="";
+    nameInput.focus();
 
-    // メイン画面を即時更新
-    render();
-    renderStatus("自動保存");
-
-    // 設定画面は開いたまま、追加完了を表示
     alert(label+"（"+formatYen(price)+"）を追加しました。");
-    document.getElementById("newLocationName").focus();
-  }
-
-  function saveSettings(){
-    var labels=document.querySelectorAll(".place-label");
-    var values=document.querySelectorAll(".place-price");
-    for(var i=0;i<PRICES.length;i++){
-      var label=labels[i].value.trim();
-      var price=Number(values[i].value);
-      if(!label){alert("場所名を入力してください。");return;}
-      if(!Number.isFinite(price)||price<0){alert(label+"の単価を正しく入力してください。");return;}
-      PRICES[i].label=label;PRICES[i].price=price;
-    }
-    normalizeWorkers();saveJSON(STORAGE.prices,PRICES);
-    document.getElementById("settingsDialog").close();autoSave();render();
   }
 
   function buildPdfSheet(record){
@@ -527,7 +563,6 @@
   document.getElementById("pdfBtn").addEventListener("click",printCurrent);
   document.getElementById("settingsBtn").addEventListener("click",openSettings);
   document.getElementById("addLocationBtn").addEventListener("click",addLocation);
-  document.getElementById("saveSettingsBtn").addEventListener("click",saveSettings);
   document.getElementById("historySearch").addEventListener("input",renderHistory);
 
   render();
