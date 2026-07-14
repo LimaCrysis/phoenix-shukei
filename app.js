@@ -913,11 +913,36 @@
     return local.toISOString().slice(0,7);
   }
 
+  function showManagementPanel(panelName){
+    var driverPanel=document.getElementById("driverManagementPanel");
+    var summaryPanel=document.getElementById("summaryManagementPanel");
+    var driverTab=document.getElementById("driverManagementTab");
+    var summaryTab=document.getElementById("summaryManagementTab");
+
+    var showDrivers=panelName==="drivers";
+
+    driverPanel.hidden=!showDrivers;
+    summaryPanel.hidden=showDrivers;
+
+    driverTab.classList.toggle("active",showDrivers);
+    summaryTab.classList.toggle("active",!showDrivers);
+
+    driverTab.setAttribute("aria-selected",String(showDrivers));
+    summaryTab.setAttribute("aria-selected",String(!showDrivers));
+
+    if(showDrivers){
+      renderDriverRoster();
+    }else{
+      renderManagement();
+    }
+  }
+
   function openManagement(){
-    renderDriverRoster();
     var monthInput=document.getElementById("managementMonth");
     if(!monthInput.value)monthInput.value=currentMonthValue();
-    renderManagement();
+
+    showManagementPanel("summary");
+
     var dialog=document.getElementById("managementDialog");
     if(!dialog.open)dialog.showModal();
   }
@@ -1052,6 +1077,12 @@
   document.getElementById("addLocationBtn").addEventListener("click",addLocation);
   document.getElementById("historySearch").addEventListener("input",renderHistory);
   document.getElementById("managementBtn").addEventListener("click",openManagement);
+  document.getElementById("driverManagementTab").addEventListener("click",function(){
+    showManagementPanel("drivers");
+  });
+  document.getElementById("summaryManagementTab").addEventListener("click",function(){
+    showManagementPanel("summary");
+  });
   document.getElementById("addDriverBtn").addEventListener("click",addDriverFromManagement);
   document.getElementById("newDriverName").addEventListener("keydown",function(event){
     if(event.key==="Enter"){event.preventDefault();addDriverFromManagement();}

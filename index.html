@@ -7,15 +7,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="集計アプリ">
-<link rel="manifest" href="manifest.webmanifest?v=6.0.0">
+<link rel="manifest" href="manifest.webmanifest?v=6.1.0">
 <title>集計アプリ</title>
-<link rel="stylesheet" href="style.css?v=6.0.0">
+<link rel="stylesheet" href="style.css?v=6.1.0">
 </head>
 <body>
 <div class="app">
   <header>
     <h1>集計アプリ</h1>
-    <div class="version">Ver.6.0.0</div>
+    <div class="version">Ver.6.1.0</div>
     <div id="saveStatus" class="save-status">未保存</div>
   </header>
 
@@ -90,6 +90,13 @@
       <button class="dialog-close" type="button" data-close-dialog="managementDialog">閉じる</button>
     </div>
 
+    <div class="management-tabs" role="tablist" aria-label="管理画面切り替え">
+      <button id="driverManagementTab" class="management-tab" type="button" role="tab">運転手登録</button>
+      <button id="summaryManagementTab" class="management-tab active" type="button" role="tab">集計</button>
+    </div>
+
+    <div id="driverManagementPanel" class="management-panel" hidden>
+
 
     <section class="driver-management-block">
       <h3>運転手管理</h3>
@@ -113,6 +120,9 @@
       <input id="restoreDataInput" type="file" accept="application/json,.json" hidden>
     </section>
 
+    </div>
+
+    <div id="summaryManagementPanel" class="management-panel">
     <div class="month-select">
       <label for="managementMonth">集計月</label>
       <input id="managementMonth" type="month">
@@ -138,6 +148,7 @@
       </section>
 
       <p class="management-note">管理画面の月間集計は詳細PDFには反映されません。順位やランキングも表示しません。</p>
+    </div>
     </div>
   </section>
 </dialog>
@@ -166,6 +177,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
-<script src="app.js?v=6.0.0"></script>
+<script src="app.js?v=6.1.0"></script>
 </body>
 </html>

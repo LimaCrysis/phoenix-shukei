@@ -841,3 +841,28 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 @media(max-width:390px){
   .data-protection-actions{grid-template-columns:1fr}
 }
+
+
+/* Ver.6.1 管理画面切り替え */
+.management-tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:14px;
+}
+.management-tab{
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:12px 8px;
+  background:#fff;
+  color:var(--text);
+  font-weight:900;
+}
+.management-tab.active{
+  background:#1769e0;
+  border-color:#1769e0;
+  color:#fff;
+}
+.management-panel[hidden]{
+  display:none !important;
+}

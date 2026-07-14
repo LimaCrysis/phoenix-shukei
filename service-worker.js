@@ -1,11 +1,11 @@
-const CACHE_NAME = "shukei-app-v6.0.0";
+const CACHE_NAME = "shukei-app-v6.1.0";
 
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=6.0.0",
-  "./app.js?v=6.0.0",
-  "./manifest.webmanifest?v=6.0.0"
+  "./style.css?v=6.1.0",
+  "./app.js?v=6.1.0",
+  "./manifest.webmanifest?v=6.1.0"
 ];
 
 const PDF_LIBRARIES = [
