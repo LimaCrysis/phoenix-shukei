@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <title>集計アプリ</title>
-<link rel="stylesheet" href="style.css?v=5.3.0">
+<link rel="stylesheet" href="style.css?v=5.4.0">
 </head>
 <body>
 <div class="app">
   <header>
     <h1>集計アプリ</h1>
-    <div class="version">Ver.5.3.0</div>
+    <div class="version">Ver.5.4.0</div>
     <div id="saveStatus" class="save-status">未保存</div>
   </header>
 
@@ -130,18 +130,22 @@
   <section class="pdf-saved-modal">
     <h2>詳細PDFを保存しました</h2>
     <p id="pdfSavedFileName"></p>
-    <ol>
-      <li>Safari上部のダウンロードボタンを開く</li>
-      <li>保存したPDFを開く</li>
-      <li>共有からLINEを選ぶ</li>
-    </ol>
-    <p class="small-note">保存済みPDFから共有すると、URLを付けずにPDFファイルだけ送れます。</p>
+    <div class="download-guide">
+      <strong>LINEへ送る手順</strong>
+      <ol>
+        <li>Safari下部のアドレスバー左側にあるページメニューを押す</li>
+        <li>「ダウンロード」を開く</li>
+        <li>保存したPDFを開く</li>
+        <li>共有からLINEを選ぶ</li>
+      </ol>
+    </div>
+    <p class="small-note">保存済みPDFから共有すると、URLを付けずPDFだけを送れます。</p>
     <button id="closePdfSavedDialog" class="action primary" type="button">閉じる</button>
   </section>
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
-<script src="app.js?v=5.3.0"></script>
+<script src="app.js?v=5.4.0"></script>
 </body>
 </html>

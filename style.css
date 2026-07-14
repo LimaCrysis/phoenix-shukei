@@ -781,3 +781,18 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .pdf-saved-modal>p{margin:8px 0}
 .pdf-saved-modal ol{margin:14px 0;padding-left:24px;line-height:1.8}
 #pdfSavedFileName{font-weight:900;word-break:break-all}
+
+.download-guide{
+  margin:14px 0;
+  padding:13px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:#f8fafc;
+}
+.download-guide strong{
+  display:block;
+  margin-bottom:7px;
+}
+.download-guide ol{
+  margin:0;
+}

@@ -636,8 +636,8 @@
         y+=sliceHeight;page++;
       }
       var fileName="詳細PDF_"+record.date+".pdf";
-      var pdfBlob=pdf.output("blob");
-      downloadPdfBlob(pdfBlob,fileName);
+      // Safariのダウンロード一覧へ登録されやすい標準保存方式を使用します。
+      pdf.save(fileName);
       var savedName=document.getElementById("pdfSavedFileName");
       if(savedName)savedName.textContent=fileName;
       var savedDialog=document.getElementById("pdfSavedDialog");
