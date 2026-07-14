@@ -473,7 +473,7 @@
   function buildPdfSheet(record){
     var priceSet=record.prices||PRICES;
     var sheet=document.createElement("div");sheet.className="pdf-sheet";
-    var content='<h1>集計アプリ</h1><div class="pdf-date">日付：'+record.date.replaceAll("-","/")+'</div>';
+    var content='<h1>詳細PDF</h1><div class="pdf-date">日付：'+record.date.replaceAll("-","/")+'</div>';
     record.workers.forEach(function(worker){
       var rows="";
       Object.keys(worker.counts).forEach(function(key){
@@ -521,7 +521,7 @@
         pdf.addImage(data,"JPEG",margin,margin,usableWidth,partHeight);
         y+=sliceHeight;page++;
       }
-      pdf.save("集計_"+record.date+".pdf");
+      pdf.save("詳細PDF_"+record.date+".pdf");
     }catch(e){
       console.error(e);
       alert("PDFの作成に失敗しました。もう一度お試しください。");
