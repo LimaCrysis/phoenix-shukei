@@ -606,6 +606,19 @@
   }
 
   async function createPdf(record){
+    var previewWindow=window.open("","_blank");
+    if(previewWindow){
+      previewWindow.document.write(
+        '<!doctype html><html lang="ja"><head><meta charset="utf-8">'+
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+        '<title>詳細PDFを作成中</title>'+
+        '<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;'+
+        'display:flex;align-items:center;justify-content:center;min-height:100vh;'+
+        'margin:0;background:#f3f6fb;color:#172033}div{text-align:center;font-weight:800}</style>'+
+        '</head><body><div>詳細PDFを作成しています…</div></body></html>'
+      );
+      previewWindow.document.close();
+    }
     if(typeof html2canvas==="undefined"||!window.jspdf){
       alert("PDF機能の読み込みに失敗しました。通信状態を確認して再読み込みしてください。");
       return;
@@ -637,26 +650,21 @@
       }
       var fileName="詳細PDF_"+record.date+".pdf";
       var pdfBlob=pdf.output("blob");
-      var pdfFile=new File([pdfBlob],fileName,{type:"application/pdf"});
+      var pdfUrl=URL.createObjectURL(pdfBlob);
 
-      // URLや本文を渡さず、PDFファイルだけを共有します。
-      if(navigator.share &&
-         navigator.canShare &&
-         navigator.canShare({files:[pdfFile]})){
-        try{
-          await navigator.share({files:[pdfFile]});
-        }catch(shareError){
-          // 共有画面を利用者が閉じた場合は何もしません。
-          if(shareError && shareError.name==="AbortError")return;
-          console.warn("PDF共有に失敗したためダウンロードします。",shareError);
-          downloadPdfBlob(pdfBlob,fileName);
-        }
+      if(previewWindow && !previewWindow.closed){
+        previewWindow.location.replace(pdfUrl);
+        window.setTimeout(function(){
+          URL.revokeObjectURL(pdfUrl);
+        },10*60*1000);
       }else{
         downloadPdfBlob(pdfBlob,fileName);
+        alert("PDF画面を開けなかったため、PDFファイルとして保存しました。");
       }
     }catch(e){
       console.error(e);
-      alert("詳細PDFの作成または共有に失敗しました。もう一度お試しください。");
+      if(previewWindow && !previewWindow.closed)previewWindow.close();
+      alert("詳細PDFの作成に失敗しました。もう一度お試しください。");
     }finally{
       if(sheet)sheet.remove();
       overlay.remove();
