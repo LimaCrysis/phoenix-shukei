@@ -1,0 +1,12 @@
+{
+  "name": "集計アプリ",
+  "short_name": "集計アプリ",
+  "description": "運転手別の本数と金額を記録・管理する集計アプリ",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f6fb",
+  "theme_color": "#0f172a",
+  "orientation": "portrait"
+}

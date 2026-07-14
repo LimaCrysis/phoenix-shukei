@@ -4,14 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="集計アプリ">
+<link rel="manifest" href="manifest.webmanifest?v=6.0.0">
 <title>集計アプリ</title>
-<link rel="stylesheet" href="style.css?v=5.5.0">
+<link rel="stylesheet" href="style.css?v=6.0.0">
 </head>
 <body>
 <div class="app">
   <header>
     <h1>集計アプリ</h1>
-    <div class="version">Ver.5.5.0</div>
+    <div class="version">Ver.6.0.0</div>
     <div id="saveStatus" class="save-status">未保存</div>
   </header>
 
@@ -50,6 +54,7 @@
   </section>
 
   <div class="notice">運転手別の本数と金額を集計できます</div>
+  <div id="offlineStatus" class="offline-status" aria-live="polite"></div>
 </div>
 
 <dialog id="settingsDialog">
@@ -95,6 +100,17 @@
         <button id="addDriverBtn" type="button">＋ 運転手を追加</button>
       </div>
       <div id="driverLimitNote" class="driver-limit-note"></div>
+    </section>
+
+
+    <section class="data-protection-block">
+      <h3>データ保護</h3>
+      <p class="management-note">機種変更や万一に備えて、運転手・場所単価・履歴を1つのファイルへ保存できます。</p>
+      <div class="data-protection-actions">
+        <button id="backupDataBtn" class="action" type="button">バックアップ</button>
+        <button id="restoreDataBtn" class="action" type="button">復元</button>
+      </div>
+      <input id="restoreDataInput" type="file" accept="application/json,.json" hidden>
     </section>
 
     <div class="month-select">
@@ -150,6 +166,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
-<script src="app.js?v=5.5.0"></script>
+<script src="app.js?v=6.0.0"></script>
 </body>
 </html>

@@ -1,18 +1,6 @@
 (function(){
   "use strict";
 
-  // Ver.2.3.0: 古いPWAキャッシュが残っている場合は自動的に削除します。
-  if("serviceWorker" in navigator){
-    navigator.serviceWorker.getRegistrations().then(function(registrations){
-      registrations.forEach(function(registration){ registration.unregister(); });
-    }).catch(function(){});
-  }
-  if("caches" in window){
-    caches.keys().then(function(keys){
-      keys.forEach(function(key){ caches.delete(key); });
-    }).catch(function(){});
-  }
-
   var STORAGE = {
     draft:"shukei_draft_v210",
     history:"shukei_history_v210",
@@ -795,6 +783,130 @@
     input.focus();
   }
 
+
+  function buildBackupData(){
+    return {
+      app:"集計アプリ",
+      version:"6.0.0",
+      createdAt:new Date().toISOString(),
+      drivers:clone(driverRoster),
+      prices:clone(PRICES),
+      history:loadJSON(STORAGE.history,[]),
+      draft:{
+        date:currentDate,
+        workers:clone(workers),
+        updatedAt:updatedAt
+      }
+    };
+  }
+
+  function downloadJsonFile(data,fileName){
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    var url=URL.createObjectURL(blob);
+    var link=document.createElement("a");
+    link.href=url;
+    link.download=fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(function(){URL.revokeObjectURL(url);},1500);
+  }
+
+  function backupData(){
+    var date=todayValue().replaceAll("-","");
+    downloadJsonFile(buildBackupData(),"集計アプリ_バックアップ_"+date+".json");
+    alert("バックアップファイルを保存しました。");
+  }
+
+  function restoreDataFile(file){
+    var reader=new FileReader();
+    reader.onload=function(){
+      try{
+        var data=JSON.parse(String(reader.result || ""));
+        if(!data || data.app!=="集計アプリ" ||
+           !Array.isArray(data.drivers) ||
+           !Array.isArray(data.prices) ||
+           !Array.isArray(data.history)){
+          throw new Error("invalid backup");
+        }
+
+        if(!confirm("現在の運転手・場所単価・履歴をバックアップ内容で置き換えますか？")){
+          return;
+        }
+
+        driverRoster=clone(data.drivers).slice(0,MAX_DRIVERS);
+        PRICES=clone(data.prices);
+
+        saveJSON(STORAGE.drivers,driverRoster);
+        saveJSON(STORAGE.prices,PRICES);
+        saveJSON(STORAGE.history,clone(data.history));
+
+        if(data.draft && Array.isArray(data.draft.workers)){
+          currentDate=data.draft.date || todayValue();
+          workers=clone(data.draft.workers);
+          updatedAt=data.draft.updatedAt || new Date().toISOString();
+        }else{
+          currentDate=todayValue();
+          workers=createWorkersFromRoster();
+          updatedAt=new Date().toISOString();
+        }
+
+        syncWorkersWithRoster(true);
+        saveJSON(STORAGE.draft,{
+          date:currentDate,
+          workers:clone(workers),
+          updatedAt:updatedAt
+        });
+
+        activeWorkerIndex=0;
+        renderDriverRoster();
+        render();
+        renderManagement();
+        alert("バックアップを復元しました。");
+      }catch(error){
+        console.error(error);
+        alert("このファイルは集計アプリのバックアップとして読み込めません。");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function updateOfflineStatus(){
+    var target=document.getElementById("offlineStatus");
+    if(!target)return;
+
+    if(!navigator.onLine){
+      target.textContent="オフラインで使用中";
+      target.className="offline-status is-offline";
+      return;
+    }
+
+    if("serviceWorker" in navigator && navigator.serviceWorker.controller){
+      target.textContent="オフライン利用の準備完了";
+      target.className="offline-status is-ready";
+    }else{
+      target.textContent="初回読み込み中 - 一度オンラインで開くとオフライン利用できます";
+      target.className="offline-status";
+    }
+  }
+
+  function registerOfflineSupport(){
+    if(!("serviceWorker" in navigator))return;
+
+    window.addEventListener("load",function(){
+      navigator.serviceWorker.register("./service-worker.js?v=6.0.0")
+        .then(function(){
+          updateOfflineStatus();
+        })
+        .catch(function(error){
+          console.warn("オフライン準備に失敗しました。",error);
+          updateOfflineStatus();
+        });
+    });
+
+    navigator.serviceWorker.addEventListener("controllerchange",updateOfflineStatus);
+  }
+
   function currentMonthValue(){
     var d=new Date();
     var local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
@@ -945,6 +1057,15 @@
     if(event.key==="Enter"){event.preventDefault();addDriverFromManagement();}
   });
   document.getElementById("managementMonth").addEventListener("change",renderManagement);
+  document.getElementById("backupDataBtn").addEventListener("click",backupData);
+  document.getElementById("restoreDataBtn").addEventListener("click",function(){
+    document.getElementById("restoreDataInput").click();
+  });
+  document.getElementById("restoreDataInput").addEventListener("change",function(event){
+    var file=event.target.files && event.target.files[0];
+    if(file)restoreDataFile(file);
+    event.target.value="";
+  });
   document.querySelectorAll("[data-close-dialog]").forEach(function(button){
     button.addEventListener("click",function(){
       var dialog=document.getElementById(button.getAttribute("data-close-dialog"));
@@ -953,6 +1074,10 @@
   });
 
   syncWorkersWithRoster(true);
+  registerOfflineSupport();
+  window.addEventListener("online",updateOfflineStatus);
+  window.addEventListener("offline",updateOfflineStatus);
+  updateOfflineStatus();
   render();
   if(updatedAt){
     renderStatus("自動保存");

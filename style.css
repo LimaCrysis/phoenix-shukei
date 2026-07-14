@@ -804,3 +804,40 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 #continuePdfOpenBtn{
   min-width:170px;
 }
+
+
+/* Ver.6.0 オフライン・データ保護 */
+.data-protection-block{
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:13px;
+  margin-bottom:16px;
+  background:#f8fafc;
+}
+.data-protection-block h3{
+  margin:0 0 5px;
+  font-size:18px;
+}
+.data-protection-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:10px;
+}
+.offline-status{
+  min-height:18px;
+  padding:0 4px 12px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+}
+.offline-status.is-offline{
+  color:#b54708;
+}
+.offline-status.is-ready{
+  color:#16803c;
+}
+@media(max-width:390px){
+  .data-protection-actions{grid-template-columns:1fr}
+}
