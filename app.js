@@ -907,6 +907,37 @@
     navigator.serviceWorker.addEventListener("controllerchange",updateOfflineStatus);
   }
 
+
+  function isEditableTarget(target){
+    if(!target || !target.closest)return false;
+    return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
+  }
+
+  function installOperationComfort(){
+    var lastTouchEnd=0;
+
+    document.addEventListener("touchend",function(event){
+      if(isEditableTarget(event.target))return;
+      var now=Date.now();
+      if(now-lastTouchEnd<=320)event.preventDefault();
+      lastTouchEnd=now;
+    },{passive:false});
+
+    ["gesturestart","gesturechange","gestureend"].forEach(function(name){
+      document.addEventListener(name,function(event){
+        if(!isEditableTarget(event.target))event.preventDefault();
+      },{passive:false});
+    });
+
+    document.addEventListener("contextmenu",function(event){
+      if(!isEditableTarget(event.target))event.preventDefault();
+    });
+
+    document.addEventListener("selectstart",function(event){
+      if(!isEditableTarget(event.target))event.preventDefault();
+    });
+  }
+
   function currentMonthValue(){
     var d=new Date();
     var local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
@@ -1105,6 +1136,7 @@
   });
 
   syncWorkersWithRoster(true);
+  installOperationComfort();
   registerOfflineSupport();
   window.addEventListener("online",updateOfflineStatus);
   window.addEventListener("offline",updateOfflineStatus);

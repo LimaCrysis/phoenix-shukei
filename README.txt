@@ -1,20 +1,19 @@
-集計アプリ Ver.6.1.0
+集計アプリ Ver.6.2.0
+Operation Comfort
 
-今回の変更
-・管理画面を2つのボタンで切り替える方式へ変更
-・「運転手登録」画面には運転手管理とデータ保護を表示
-・「集計」画面には月間集計だけを表示
-・管理画面を開いた時は「集計」を最初に表示
-・選択していない画面は非表示にし、縦に長くならないよう改善
-・運転手管理、自動保存、場所単価、PDF、オフライン、バックアップ機能は維持
+変更内容
+・ダブルタップズームを抑制
+・ピンチズームを抑制
+・ボタンやラベルの長押し選択を抑制
+・入力欄は通常どおり編集可能
+・タップ反応と押下表示を改善
+・Safariとホーム画面で操作感を統一
+・既存機能はすべて維持
 
-GitHub更新方法
-次のファイルを上書きしてください。
-・index.html
-・style.css
-・app.js
-・README.txt
-・manifest.webmanifest
-・service-worker.js
-
-更新後はSafariでページを再読み込みしてください。
+GitHubへ次の6ファイルを上書きしてください。
+index.html
+style.css
+app.js
+README.txt
+manifest.webmanifest
+service-worker.js
