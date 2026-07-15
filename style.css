@@ -893,3 +893,21 @@ button,.action,.switch-btn,.plus,.minus,.management-tab,.dialog-close,
 button:active,.action:active,.switch-btn:active,.plus:active,.minus:active,.management-tab:active{
   transform:scale(.98);
 }
+
+/* Ver.6.2.1 カウンターボタン安定化 */
+.plus,
+.minus,
+.plus:active,
+.minus:active{
+  transform:none !important;
+}
+
+.plus,
+.minus{
+  transition:background-color .08s ease, filter .08s ease;
+}
+
+.plus:active,
+.minus:active{
+  filter:brightness(.90);
+}
